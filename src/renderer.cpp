@@ -33,7 +33,7 @@ Renderer::Renderer(Window *window) {
   }
 
   // Initialize GLAD
-  gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+  gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress);
   SDL_Log("OpenGL %d.%d", GLVersion.major, GLVersion.minor);
   SDL_Log("OpenGL %s, GLSL %s", glGetString(GL_VERSION),
           glGetString(GL_SHADING_LANGUAGE_VERSION));
@@ -41,13 +41,13 @@ Renderer::Renderer(Window *window) {
   SDL_Log("Renderer: %s", glGetString(GL_RENDERER));
 
   // Enable the debug callback
-  glEnable(GL_DEBUG_OUTPUT);
-  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-  glDebugMessageCallback(openglCallbackFunction, nullptr);
-  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
-                        GL_FALSE);
-  glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DONT_CARE,
-                        0, NULL, GL_TRUE);
+  // glEnable(GL_DEBUG_OUTPUT);
+  // glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+  // glDebugMessageCallback(openglCallbackFunction, nullptr);
+  // glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
+  //                       GL_FALSE);
+  // glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DONT_CARE,
+  //                       0, NULL, GL_TRUE);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -55,26 +55,31 @@ Renderer::Renderer(Window *window) {
   // Set up OpenGL state
   glClearColor(0.25f, .25f, 0.25f, 1.0f);
 
+  SDL_Log("OpenGL state initialized");
+
   // Init Quad
-  {
-    glGenVertexArrays(1, &this->quadVAO);
-    glGenBuffers(1, &quadVBO);
+  // {
+  //   glGenVertexArrays(1, &this->quadVAO);
+  //   glGenBuffers(1, &quadVBO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices,
-                 GL_STATIC_DRAW);
+  //   glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+  //   glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices,
+  //                GL_STATIC_DRAW);
 
-    glBindVertexArray(quadVAO);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-                          (void *)0);
+  //   glBindVertexArray(quadVAO);
+  //   glEnableVertexAttribArray(0);
+  //   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
+  //                         (void *)0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-  }
+  //   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  //   glBindVertexArray(0);
+  // }
 
+  SDL_Log("Renderer created");
   // Create shader program
-  CreateShaderProgram();
+  // CreateShaderProgram();
+
+  SDL_Log("Shader program created");
 }
 
 Renderer::~Renderer() {

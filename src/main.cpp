@@ -25,7 +25,7 @@ void main_loop() {
 
     // Render sprites
     // ...
-    renderer->RenderSprite(sprite);
+    // renderer->RenderSprite(sprite);
 
     // Swap buffers
     renderer->Present();
