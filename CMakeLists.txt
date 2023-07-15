@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+# log 5the build variant
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # print the current cmake build environment
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -35,7 +37,7 @@ endif()
 add_subdirectory(lib/glad)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp")
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp")
 
 # self published libraries
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
@@ -73,6 +75,8 @@ if (WIN32)
 
     # windows cmake puts into the build type dir
     add_custom_target(copy_assets
+        # log Copying on Windows to 
+        COMMAND echo Copying assets to ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/assets
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/assets
     )
     add_dependencies(${PROJECT_NAME} copy_assets)

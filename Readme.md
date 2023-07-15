@@ -16,7 +16,6 @@ I highly recommend setting your ide formatter to use clang format,
 
 You can build for multiple platforms using CMake, you will need the following installed to link for your platform of choice
 
-- glad
 - SDL2
 - SDL2-image
 - SDL2-mixer
@@ -30,6 +29,7 @@ You can build for multiple platforms using CMake, you will need the following in
 - Build
 - Run GlGame.exe
 - if you run into any issues, ensure the assets directory is copied to the exe directory
+  - with vscode cmake extension you can fix this by [setting build type on multi config](https://github.com/microsoft/vscode-cmake-tools/issues/1298)
 
 ### Linux / MacOS
 
