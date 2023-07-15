@@ -1,0 +1,85 @@
+name: Release Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  release_web:
+    name: Web Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Create Build Directory
+        run: cmake -E make_directory ${{github.workspace}}/build
+
+      - name: Install Packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gcc-multilib python3 curl zip unzip
+          sudo apt-get install -y --no-install-recommends libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libgl1-mesa-dev
+
+      - name: Configure Emscripten
+        shell: bash
+
+        # Change the directory to be emsdk instead of the project root
+        working-directory: ${{github.workspace}}/emsdk
+        run: |
+          ./emsdk install latest
+          ./emsdk activate latest
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -Wno-dev -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+
+      - name: Build
+
+        run: cmake --build ./build --config Release
+
+      - name: Run CMAKE copy_html
+        # run the cmake copy_html command added as a custom target in CMakeLists.txt
+        # I have no idea why this is getting skipped
+        run: cmake --build ./build --target copy_html
+
+      - name: Create Artifact
+        run: |
+          mkdir release
+          cp build/GlGame.html release/index.html
+          cp build/GlGame.js release/GlGame.js
+          cp build/GlGame.wasm release/GlGame.wasm
+          cp build/GlGame.data release/GlGame.data
+          cp -r assets release/assets
+
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: web-release
+          path: release
+      
+      - name: Install Butler
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Create release zip and run Butler
+
+        # Here we say that we will use the BUTLER_API_KEY as an environment variable
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          cd release
+          zip -r ../web.zip *
+          cd ..
+
+          # Butler will read the API key from the environment variable
+          ./butler login
+          ./butler push web.zip NotoriousENG/gl-game:html5
+          ./butler logout
