@@ -40,16 +40,16 @@ Renderer::Renderer(Window *window) {
   SDL_Log("Vendor: %s", glGetString(GL_VENDOR));
   SDL_Log("Renderer: %s", glGetString(GL_RENDERER));
 
-  // Enable the debug callback
-  #ifndef EMSCRIPTEN
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(openglCallbackFunction, nullptr);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
-                          GL_FALSE);
-    glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR,
-                          GL_DONT_CARE, 0, NULL, GL_TRUE);
-  #endif
+// Enable the debug callback
+#ifndef EMSCRIPTEN
+  glEnable(GL_DEBUG_OUTPUT);
+  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+  glDebugMessageCallback(openglCallbackFunction, nullptr);
+  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
+                        GL_FALSE);
+  glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DONT_CARE,
+                        0, NULL, GL_TRUE);
+#endif
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -60,7 +60,7 @@ Renderer::Renderer(Window *window) {
   SDL_Log("OpenGL state initialized");
 
   // Init Quad
- {
+  {
     glGenVertexArrays(1, &this->quadVAO);
     glGenBuffers(1, &quadVBO);
 
@@ -132,8 +132,6 @@ void Renderer::RenderSprite(const Sprite &sprite) {
 
   glBindVertexArray(0);
 }
-
-
 
 GLuint Renderer::LoadTexture(const std::string &filepath) {
   // Load image using SDL_image
