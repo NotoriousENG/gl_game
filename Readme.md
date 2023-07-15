@@ -21,6 +21,7 @@ You can build for multiple platforms using CMake, you will need the following in
 - SDL2-mixer
 - SDL2-ttf
 - libvorbis
+- glm (this is handled as a [submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules) )
 
 ### Windows
 

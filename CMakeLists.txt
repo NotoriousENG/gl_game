@@ -20,7 +20,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_compile_definitions("EMSCRIPTEN")
-    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 --preload-file assets --use-preload-plugins")
+    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s FULL_ES3 -gsource-map --preload-file assets --use-preload-plugins")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
@@ -30,7 +30,6 @@ else()
     find_package(sdl2-mixer REQUIRED)
     find_package(sdl2-image REQUIRED)
     find_package(sdl2-ttf REQUIRED)
-    find_package(GLM REQUIRED)
 endif()
 
 # Add library subdirectories
@@ -42,6 +41,8 @@ add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cp
 # self published libraries
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 
 # if this is a release build #define DEBUG 1
 if (NOT CMAKE_BUILD_TYPE MATCHES Release) # append AND false to disable in debug
@@ -61,9 +62,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_IMAGE_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_MIXER_LIBRARIES}) # ensure sdl2-mixer "extensions" are installed for .ogg: https://www.reddit.com/r/cataclysmdda/comments/glxgtb/fix_for_sound_problem_when_compiling_in_windows/
 target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_TTF_LIBRARIES})
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${GLM_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GLM_LIBRARIES})
 
 if (WIN32)
     # /ENTRY:mainCRTStartup keeps the same "main" function instead of requiring "WinMain"

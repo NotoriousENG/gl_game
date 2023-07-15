@@ -33,7 +33,7 @@ Renderer::Renderer(Window *window) {
   }
 
   // Initialize GLAD
-  gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
+  gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress);
   SDL_Log("OpenGL %d.%d", GLVersion.major, GLVersion.minor);
   SDL_Log("OpenGL %s, GLSL %s", glGetString(GL_VERSION),
           glGetString(GL_SHADING_LANGUAGE_VERSION));
@@ -41,13 +41,15 @@ Renderer::Renderer(Window *window) {
   SDL_Log("Renderer: %s", glGetString(GL_RENDERER));
 
   // Enable the debug callback
-  glEnable(GL_DEBUG_OUTPUT);
-  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-  glDebugMessageCallback(openglCallbackFunction, nullptr);
-  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
-                        GL_FALSE);
-  glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DONT_CARE,
-                        0, NULL, GL_TRUE);
+  #ifndef EMSCRIPTEN
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(openglCallbackFunction, nullptr);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL,
+                          GL_FALSE);
+    glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR,
+                          GL_DONT_CARE, 0, NULL, GL_TRUE);
+  #endif
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -55,8 +57,10 @@ Renderer::Renderer(Window *window) {
   // Set up OpenGL state
   glClearColor(0.25f, .25f, 0.25f, 1.0f);
 
+  SDL_Log("OpenGL state initialized");
+
   // Init Quad
-  {
+ {
     glGenVertexArrays(1, &this->quadVAO);
     glGenBuffers(1, &quadVBO);
 
@@ -73,8 +77,11 @@ Renderer::Renderer(Window *window) {
     glBindVertexArray(0);
   }
 
+  SDL_Log("Renderer created");
   // Create shader program
   CreateShaderProgram();
+
+  SDL_Log("Shader program created");
 }
 
 Renderer::~Renderer() {
@@ -125,6 +132,8 @@ void Renderer::RenderSprite(const Sprite &sprite) {
 
   glBindVertexArray(0);
 }
+
+
 
 GLuint Renderer::LoadTexture(const std::string &filepath) {
   // Load image using SDL_image
