@@ -33,10 +33,20 @@ public:
 
 private:
   SDL_GLContext glContext;
-  GLuint vertexArray;
-  GLuint vertexBuffer;
-  GLuint shaderProgram;
+
   std::vector<Sprite> sprites;
+
+  // Sprite shader program
+  GLuint shaderProgram;
+
+  // quad VAO/VBO
+  unsigned int quadVAO;
+  unsigned int quadVBO;
+  const float quadVertices[24] = {
+      // pos      // tex
+      -.5f, -.5f, 1.0f, 1.0f, .5f, -.5f, 0.0f, 1.0f, -.5f, .5f,  1.0f, 0.0f,
+
+      -.5f, .5f,  1.0f, 0.0f, .5f, .5f,  0.0f, 0.0f, .5f,  -.5f, 0.0f, 1.0f};
 
   void CreateBuffers();
   void CreateShaderProgram();
@@ -46,13 +56,4 @@ private:
                                               GLsizei length,
                                               const GLchar *message,
                                               const void *userParam);
-
-  // configure VAO/VBO
-  unsigned int quadVAO;
-  unsigned int quadVBO;
-  const float quadVertices[24] = {
-      // pos      // tex
-      -.5f, -.5f, 1.0f, 1.0f, .5f, -.5f, 0.0f, 1.0f, -.5f, .5f,  1.0f, 0.0f,
-
-      -.5f, .5f,  1.0f, 0.0f, .5f, .5f,  0.0f, 0.0f, .5f,  -.5f, 0.0f, 1.0f};
 };

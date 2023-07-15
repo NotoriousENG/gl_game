@@ -51,6 +51,9 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
+  // destroy the renderer this has to be done before the window is destroyed
+  renderer.reset();
+
   glDeleteTextures(1, &texture);
   SDL_Log("Texture deleted");
 

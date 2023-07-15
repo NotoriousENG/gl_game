@@ -62,7 +62,9 @@ Renderer::Renderer(Window *window) {
   // Init Quad
   {
     glGenVertexArrays(1, &this->quadVAO);
+    SDL_Log("QuadVAO created");
     glGenBuffers(1, &quadVBO);
+    SDL_Log("QuadVBO created");
 
     glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices,
@@ -85,8 +87,20 @@ Renderer::Renderer(Window *window) {
 }
 
 Renderer::~Renderer() {
+  // Delete shader program
+  glDeleteProgram(shaderProgram);
+  SDL_Log("Shader program deleted");
+
+  // Delete quad
+  glDeleteVertexArrays(1, &quadVAO);
+  SDL_Log("QuadVAO deleted");
+
+  glDeleteBuffers(1, &quadVBO);
+  SDL_Log("QuadVBO deleted");
+
   // Destroy OpenGL context
   SDL_GL_DeleteContext(glContext);
+  SDL_Log("OpenGL context destroyed");
 }
 
 void Renderer::Clear() {
