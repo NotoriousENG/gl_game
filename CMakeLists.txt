@@ -34,7 +34,6 @@ endif()
 
 # Add library subdirectories
 add_subdirectory(lib/glad)
-add_subdirectory(lib/glm)
 
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp")
@@ -43,8 +42,7 @@ add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cp
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm/glm)
-target_link_libraries(${PROJECT_NAME} PRIVATE glm)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 
 # if this is a release build #define DEBUG 1
 if (NOT CMAKE_BUILD_TYPE MATCHES Release) # append AND false to disable in debug
