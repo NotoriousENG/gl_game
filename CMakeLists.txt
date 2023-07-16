@@ -74,8 +74,8 @@ if (WIN32)
     # windows cmake puts into the build type dir
     add_custom_target(copy_assets
         # log Copying on Windows to 
-        COMMAND echo Copying assets to ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/assets
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/assets
+        COMMAND echo Copying assets to ${CMAKE_CURRENT_BINARY_DIR}/assets
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
     )
     add_dependencies(${PROJECT_NAME} copy_assets)
 else()
