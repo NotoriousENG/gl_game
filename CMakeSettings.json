@@ -10,6 +10,16 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ]
+    },
+    {
+      "name": "emscripten",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\out\\build\\emscripten",
+      "installRoot": "${projectDir}\\out\\install\\emscripten",
+      "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": ""
     }
   ]
 }

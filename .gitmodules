@@ -5,3 +5,9 @@
 [submodule "emsdk"]
 	path = emsdk
 	url = https://github.com/emscripten-core/emsdk
+[submodule "lib/datachannel-wasm"]
+	path = lib/datachannel-wasm
+	url = https://github.com/paullouisageneau/datachannel-wasm.git
+[submodule "lib/libdatachannel"]
+	path = lib/libdatachannel
+	url = https://github.com/paullouisageneau/libdatachannel.git
