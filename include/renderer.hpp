@@ -12,7 +12,8 @@ class Window;
 struct Sprite {
   GLuint texture;
   glm::vec2 position;
-  glm::vec2 size;
+  float rotation;
+  glm::vec2 scale;
 };
 
 struct Vertex {

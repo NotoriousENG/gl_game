@@ -5,6 +5,9 @@
 #include "window.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "defs.hpp"
 
 void Renderer::openglCallbackFunction(GLenum source, GLenum type, GLuint id,
                                       GLenum severity, GLsizei length,
@@ -117,9 +120,20 @@ void Renderer::RenderSprite(const Sprite &sprite) {
   // Activate the shader program
   glUseProgram(shaderProgram);
 
+  // build model matrix (transform) from sprite position, rotation, and scale
   glm::mat4 model = glm::mat4(1.0f);
+  model = glm::translate(model, glm::vec3(sprite.position, 0.0f)) * glm::rotate(model, sprite.rotation, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::scale(model, glm::vec3(sprite.scale, 1.0f));
+
+  // the "camera" should be 10 meters away from the origin
+  // this is a 3d perspective, change to 2d later
   glm::mat4 view = glm::mat4(1.0f);
+  view = glm::translate(view, glm::vec3(0.0f, 0.0f, -10.0f));
   glm::mat4 projection = glm::mat4(1.0f);
+  projection = glm::perspective(
+      glm::radians(45.0f),
+      (float)ASPECT_RATIO, 0.1f, 100.0f);
+
+
   glm::vec3 spriteColor = glm::vec3(1.0f);
 
   glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE,
