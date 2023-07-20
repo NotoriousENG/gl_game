@@ -39,12 +39,21 @@ add_subdirectory(lib/glad)
 add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-    add_subdirectory(lib/datachannel-wasm EXCLUDE_FROM_ALL)
+    add_subdirectory(lib/datachannel-wasm)
     target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-wasm)
 else()
     option(NO_MEDIA "Disable media support in libdatachannel" ON)
-    add_subdirectory(lib/libdatachannel EXCLUDE_FROM_ALL)
+    add_subdirectory(lib/libdatachannel)
     target_link_libraries(${PROJECT_NAME} PRIVATE datachannel)
+    if (WIN32)
+        # windows needs the dll in the same dir as the exe
+        set_target_properties(datachannel PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+            ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+    endif()
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
 endif()
 
 
@@ -87,7 +96,7 @@ if (WIN32)
         COMMAND echo Copying assets to ${CMAKE_CURRENT_BINARY_DIR}/assets
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
     )
-    add_dependencies(${PROJECT_NAME} copy_assets)
+    add_dependencies(${PROJECT_NAME} copy_assets) 
 else()
     add_custom_target(copy_assets
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
