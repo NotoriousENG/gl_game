@@ -46,6 +46,8 @@ int main(int argc, char *argv[]) {
   // Get connections
   NetManager *net;
   net = new NetManager(
+      argv[1],
+      argv[2],
       [&net](std::string id) {
         std::cout << "connected to player: " << id << std::endl;
         net->sendTo(id, "hi!");

@@ -29,7 +29,8 @@ private:
   std::unordered_map<std::string, shared_ptr<rtc::DataChannel>> dataChannels;
   std::shared_ptr<rtc::WebSocket> ws;
   rtc::Configuration config;
-
+  std::string hostJoin;
+  std::string roomCode;
 
   void createDataChannel(shared_ptr<rtc::PeerConnection> pc, std::string id) {
     // We are the offerer, so create a data channel to initiate the process
@@ -109,9 +110,11 @@ private:
   };
 
 public:
-  NetManager(std::function<void(std::string)> onConnection,
+  NetManager(std::string hostJoin, std::string roomCode,
+             std::function<void(std::string)> onConnection,
              std::function<void(std::string, std::string)> onMessage)
-      : onConnection(onConnection), onMessage(onMessage) {}
+      : hostJoin(hostJoin), roomCode(roomCode), onConnection(onConnection),
+        onMessage(onMessage) {}
 
   ~NetManager() {
     dataChannels.clear();
@@ -123,8 +126,17 @@ public:
     std::promise<void> wsPromise;
     auto wsFuture = wsPromise.get_future();
 
-    ws->onOpen([&wsPromise]() {
+    ws->onOpen([this, &wsPromise, wws = make_weak_ptr(ws)]() {
       std::cout << "WebSocket connected, signaling ready" << std::endl;
+      if (auto ws = wws.lock()) {
+        if (hostJoin == "host") {
+          ws->send("{\"type\": \"host\"}");
+        } else if (hostJoin == "join") {
+          ws->send("{\"type\": \"join\", \"roomCode\": \"" + roomCode + "\"}");
+        } else {
+          std::cout << "Neither host nor join. Bad things afoot" << std::endl;
+        }
+      }
       wsPromise.set_value();
     });
 
@@ -167,6 +179,33 @@ public:
       auto type = it->get<std::string>();
 
       std::cout << "found type: " << type << std::endl;
+
+      if (type == "roomCode") {
+        it = message.find("roomCode");
+        if (it == message.end()) {
+          std::cout << "could not find room code content" << std::endl;
+          return;
+        }
+        auto code = it->get<std::string>();
+        std::cout << "GOT ROOM CODE!: " << code << std::endl;
+        return;
+      } else if (type == "exception") {
+        it = message.find("message");
+        if (it == message.end()) {
+          std::cout << "could not find exception message" << std::endl;
+          return;
+        }
+        auto exceptionMessage = it->get<std::string>();
+        it = message.find("code");
+        if (it == message.end()) {
+          std::cout << "could not find room code content" << std::endl;
+          return;
+        }
+        auto code = it->get<std::string>();
+        std::cout << "Got an exception: code:" << code
+                  << " and message: " << exceptionMessage << std::endl;
+        return;
+      }
 
       // get the peer connection based on the id
       // or make it if it doesn't yet exist
