@@ -3,10 +3,12 @@
 #include <emscripten/html5.h>
 #endif
 
+#include "net_manager.cpp"
 #include "renderer.hpp"
 #include "window.hpp"
 
 #include "memory"
+#include <iostream>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -40,6 +42,18 @@ int main(int argc, char *argv[]) {
   sprite = {.texture = texture,
             .position = glm::vec2(0.0f, 0.0f),
             .size = glm::vec2(64.0f, 64.0f)};
+
+  // Get connections
+  NetManager *net;
+  net = new NetManager(
+      [&net](std::string id) {
+        std::cout << "connected to player: " << id << std::endl;
+        net->sendTo(id, "hi!");
+      },
+      [](std::string id, std::string message) {
+        std::cout << "message from player: " << id << "is: " << message << std::endl;
+      });
+  net->connectToSignaling();
 
   // Main loop
   running = true;

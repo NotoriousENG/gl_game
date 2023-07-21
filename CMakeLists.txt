@@ -36,14 +36,15 @@ endif()
 add_subdirectory(lib/glad)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp")
-
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" "src/net_manager.cpp")
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-    add_subdirectory(lib/datachannel-wasm EXCLUDE_FROM_ALL)
+    add_subdirectory(lib/datachannel-wasm)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel-wasm/wasm/include)
     target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-wasm)
 else()
     option(NO_MEDIA "Disable media support in libdatachannel" ON)
-    add_subdirectory(lib/libdatachannel EXCLUDE_FROM_ALL)
+    add_subdirectory(lib/libdatachannel)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
     target_link_libraries(${PROJECT_NAME} PRIVATE datachannel)
 endif()
 
