@@ -8,7 +8,6 @@
 #include "window.hpp"
 
 #include "memory"
-#include <iostream>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -46,14 +45,13 @@ int main(int argc, char *argv[]) {
   // Get connections
   NetManager *net;
   net = new NetManager(
-      argv[1],
-      argv[2],
+      "join", "room-RisingStuck",
       [&net](std::string id) {
-        std::cout << "connected to player: " << id << std::endl;
+        printf("connected to player %s\n", id.c_str());
         net->sendTo(id, "hi!");
       },
-      [](std::string id, std::string message) {
-        std::cout << "message from player: " << id << "is: " << message << std::endl;
+      [](std::string id, std::string message) { 
+          printf("Got message: %s\n", message.c_str());
       });
   net->connectToSignaling();
 

@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <chrono>
 #include <future>
-#include <iostream>
 #include <memory>
 #include <random>
 #include <stdexcept>
@@ -35,8 +34,7 @@ private:
   void createDataChannel(shared_ptr<rtc::PeerConnection> pc, std::string id) {
     // We are the offerer, so create a data channel to initiate the process
     const std::string label = "test";
-    std::cout << "Creating DataChannel with label \"" << label << "\""
-              << std::endl;
+    printf("creating datachannel\n");
     auto dc = pc->createDataChannel(label);
 
     setupDataChannel(dc, id);
@@ -46,12 +44,12 @@ private:
 
   void setupDataChannel(std::shared_ptr<rtc::DataChannel> dc, std::string id) {
     dc->onOpen([this, id, wdc = make_weak_ptr(dc)]() {
-      std::cout << "DataChannel from " << id << " open" << std::endl;
+      printf("opened channel with %s\n", id.c_str());
       onConnection(id);
     });
 
-    dc->onClosed([id]() {
-      std::cout << "DataChannel from " << id << " closed" << std::endl;
+    dc->onClosed([id]() { printf("creating datachannel\n");
+      printf("closed channel with %s\n", id.c_str());
     });
 
     dc->onMessage([this, id, wdc = make_weak_ptr(dc)](auto data) {
@@ -68,14 +66,6 @@ private:
   createPeerConnection(const rtc::Configuration &config,
                        weak_ptr<rtc::WebSocket> wws, std::string id) {
     auto pc = std::make_shared<rtc::PeerConnection>(config);
-
-    pc->onStateChange([](rtc::PeerConnection::State state) {
-      std::cout << "State: " << state << std::endl;
-    });
-
-    pc->onGatheringStateChange([](rtc::PeerConnection::GatheringState state) {
-      std::cout << "Gathering State: " << state << std::endl;
-    });
 
     pc->onLocalDescription([wws, id](rtc::Description description) {
       json message = {{"id", id},
@@ -99,8 +89,7 @@ private:
     });
 
     pc->onDataChannel([this, id](shared_ptr<rtc::DataChannel> dc) {
-      std::cout << "DataChannel from " << id << " received with label \""
-                << dc->label() << "\"" << std::endl;
+      printf("recieved channel from %s with label %s\n", id.c_str(), dc->label().c_str());
       setupDataChannel(dc, id);
       dataChannels.emplace(id, dc);
     });
@@ -114,7 +103,12 @@ public:
              std::function<void(std::string)> onConnection,
              std::function<void(std::string, std::string)> onMessage)
       : hostJoin(hostJoin), roomCode(roomCode), onConnection(onConnection),
-        onMessage(onMessage) {}
+        onMessage(onMessage) {
+    config.iceServers.emplace_back("stun:stun1.l.google.com:19302");
+    config.iceServers.emplace_back("stun:stun2.l.google.com:19302");
+    config.iceServers.emplace_back("stun:stun3.l.google.com:19302");
+    config.iceServers.emplace_back("stun:stun4.l.google.com:19302");
+  }
 
   ~NetManager() {
     dataChannels.clear();
@@ -123,89 +117,75 @@ public:
 
   void connectToSignaling() {
     ws = std::make_shared<rtc::WebSocket>();
-    std::promise<void> wsPromise;
-    auto wsFuture = wsPromise.get_future();
 
-    ws->onOpen([this, &wsPromise, wws = make_weak_ptr(ws)]() {
-      std::cout << "WebSocket connected, signaling ready" << std::endl;
+    ws->onOpen([this, wws = make_weak_ptr(ws)]() {
+      printf("wsopen");
       if (auto ws = wws.lock()) {
         if (hostJoin == "host") {
-          ws->send("{\"type\": \"host\"}");
+          json message = {{"type", "host"}};
+          ws->send(message.dump());
         } else if (hostJoin == "join") {
-          ws->send("{\"type\": \"join\", \"roomCode\": \"" + roomCode + "\"}");
+          json message = {{"type", "join"}, {"roomCode", roomCode}};
+          ws->send(message.dump());
         } else {
-          std::cout << "Neither host nor join. Bad things afoot" << std::endl;
         }
       }
-      wsPromise.set_value();
     });
 
-    ws->onError([&wsPromise](std::string s) {
-      std::cout << "WebSocket error" << std::endl;
-      wsPromise.set_exception(std::make_exception_ptr(std::runtime_error(s)));
+    ws->onError([](std::string s) {
+      printf("wserror");
     });
 
-    ws->onClosed([]() { std::cout << "WebSocket closed" << std::endl; });
+    ws->onClosed([]() { printf("wsclosed"); });
 
     ws->onMessage([this, wws = make_weak_ptr(ws)](auto data) {
-      std::cout << "Got a message" << std::endl;
-
       // data holds either std::string or rtc::binary; we require a string
       if (!std::holds_alternative<std::string>(data)) {
-        std::cout << "message not a string" << std::endl;
         return;
       }
 
-      std::cout << "Message is: " << std::get<std::string>(data) << std::endl;
+      auto messageText = std::get<std::string>(data);
 
-      json message = json::parse(std::get<std::string>(data));
+      printf("got ws message: %s\n", messageText.c_str());
 
-      // always an id of the sender
-      auto it = message.find("id");
+      json message = json::parse(messageText);
+
+      // always a type
+      auto it = message.find("type");
       if (it == message.end()) {
-        std::cout << "could not find id" << std::endl;
-        return;
-      }
-      auto id = it->get<std::string>();
-
-      std::cout << "found id: " << id << std::endl;
-
-      // and a type
-      it = message.find("type");
-      if (it == message.end()) {
-        std::cout << "could not find type" << std::endl;
         return;
       }
       auto type = it->get<std::string>();
 
-      std::cout << "found type: " << type << std::endl;
-
       if (type == "roomCode") {
         it = message.find("roomCode");
         if (it == message.end()) {
-          std::cout << "could not find room code content" << std::endl;
           return;
         }
         auto code = it->get<std::string>();
-        std::cout << "GOT ROOM CODE!: " << code << std::endl;
+        printf("assigned room code: %s", code.c_str());
         return;
       } else if (type == "exception") {
         it = message.find("message");
         if (it == message.end()) {
-          std::cout << "could not find exception message" << std::endl;
           return;
         }
         auto exceptionMessage = it->get<std::string>();
         it = message.find("code");
         if (it == message.end()) {
-          std::cout << "could not find room code content" << std::endl;
           return;
         }
         auto code = it->get<std::string>();
-        std::cout << "Got an exception: code:" << code
-                  << " and message: " << exceptionMessage << std::endl;
         return;
       }
+
+      // other ones all have an id
+      it = message.find("id");
+      if (it == message.end()) {
+        return;
+      }
+      auto id = it->get<std::string>();
+
 
       // get the peer connection based on the id
       // or make it if it doesn't yet exist
@@ -214,7 +194,6 @@ public:
         pc = jt->second;
       } else if (type == "offer" || type == "requestOffer") {
         pc = createPeerConnection(config, wws, id);
-        std::cout << "making new peer connection" << std::endl;
       } else {
         return;
       }
@@ -222,23 +201,18 @@ public:
       // finally catch up on the actual message
       if (type == "requestOffer") {
         createDataChannel(pc, id);
-        std::cout << "making new data channel" << std::endl;
       } else if (type == "offer" || type == "answer") {
         auto sdp = message["description"].get<std::string>();
         pc->setRemoteDescription(rtc::Description(sdp, type));
-        std::cout << "getting response to offer/answer" << std::endl;
       } else if (type == "candidate") {
         auto sdp = message["candidate"].get<std::string>();
         auto mid = message["mid"].get<std::string>();
         pc->addRemoteCandidate(rtc::Candidate(sdp, mid));
-        std::cout << "dealing with the candidate" << std::endl;
       }
     });
 
-    ws->open("ws://localhost:8000"); // is this the right port??
-
-    std::cout << "Waiting for signaling to be connected..." << std::endl;
-    wsFuture.get();
+    ws->open("wss://gl-game-backend.deno.dev");
+    printf("swag.\n");
   }
 
   void sendTo(std::string id, std::string message) {
