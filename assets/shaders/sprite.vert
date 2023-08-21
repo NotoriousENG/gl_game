@@ -1,15 +1,24 @@
 #version 300 es
 precision highp float;
 
-layout(location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
+// Vertex attributes for position and color
+layout(location = 0) in vec2 in_position;
+layout(location = 1) in vec2 in_uv;
+layout(location = 2) in vec4 in_color;
 
-out vec2 TexCoords;
+// uniform will contain the world matrix.
+uniform mat3 screenTransform;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+// output variables
+out vec2 uv;
+out vec4 color;
 
-void main() {
-  TexCoords = vertex.zw;
-  gl_Position = projection * view * model * vec4(vertex.xy, 0.0, 1.0);
+void main(void) {
+  // transform the vector
+  vec3 transformed = screenTransform * vec3(in_position, 1);
+  gl_Position = vec4(transformed, 1);
+
+  // pass through uv and color
+  uv = in_uv;
+  color = in_color;
 }

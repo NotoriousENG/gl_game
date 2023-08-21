@@ -36,7 +36,7 @@ endif()
 add_subdirectory(lib/glad)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp")
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_subdirectory(lib/datachannel-wasm)

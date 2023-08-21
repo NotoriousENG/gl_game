@@ -5,13 +5,16 @@
 
 #include <memory>
 
-#include "renderer.hpp"
-#include "window.hpp"
 #include "defs.hpp"
+#include "renderer.hpp"
+#include "sprite-batch.hpp"
+#include "texture.hpp"
+#include "window.hpp"
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
-static std::vector<Sprite> sprites;
+static std::shared_ptr<Texture> texture_anya;
+static std::unique_ptr<SpriteBatch> spriteBatcher;
 
 void main_loop() {
   SDL_Event event;
@@ -26,9 +29,33 @@ void main_loop() {
 
   // Render sprites
   // ...
-  for (auto &sprite : sprites) {
-    renderer->RenderSprite(sprite);
+  // Loop and draw 1000 sprites to the screen
+  for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 10; j++) {
+      for (int k = 0; k < 10; k++) {
+        spriteBatcher->Draw(
+
+            // position of the rectangle
+            glm::vec4(100 + i * 50 + k * -10, 100 + j * 50 + k * -10, 50, 50),
+
+            // rectangle size
+            glm::vec4(0, 0, 300, 320),
+
+            // color to tint the sprite
+            glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1),
+
+            // texture of the sprite
+            texture_anya.get());
+
+        // Uncomment this line to see how much slower it is to call draw
+        // separately for each sprite.
+        // spriteBatcher->Flush();
+      }
+    }
   }
+  // Now that we have a collection of all the draws we want to make, send it all
+  // to the gpu to be drawn!
+  spriteBatcher->Flush();
 
   // Swap buffers
   renderer->Present();
@@ -38,18 +65,13 @@ int main(int argc, char *argv[]) {
   Window window(GAME_NAME, WINDOW_WIDTH, WINDOW_HEIGHT);
   renderer = std::make_unique<Renderer>(&window);
 
-  GLuint texture_anya = renderer->LoadTexture("assets/textures/anya.png");
-  GLuint texture_tink = renderer->LoadTexture("assets/textures/tink.png");
+  spriteBatcher =
+      std::make_unique<SpriteBatch>(glm::vec2(WINDOW_WIDTH, WINDOW_HEIGHT));
 
-  sprites.push_back(Sprite{.texture = texture_anya,
-            .position = glm::vec2(2.0f, 0.0f),
-            .rotation = 0.0f,
-            .scale = glm::vec2(1.0f, 1.0f)});
+  texture_anya = std::make_shared<Texture>("assets/textures/anya.png");
 
-  sprites.push_back(Sprite{.texture = texture_tink,
-            .position = glm::vec2(-2.0f, 0.0f),
-            .rotation = 0.0f,
-            .scale = glm::vec2(1.0f, 1.0f)});
+  // std::shared_ptr<Texture> texture_tink =
+  //     std::make_shared<Texture>("assets/textures/tink.png");
 
   // Main loop
   running = true;
@@ -63,10 +85,6 @@ int main(int argc, char *argv[]) {
 
   // destroy the renderer this has to be done before the window is destroyed
   renderer.reset();
-
-  glDeleteTextures(1, &texture_anya);
-  glDeleteTextures(1, &texture_tink);
-  SDL_Log("Texture deleted");
 
   return 0;
 }
