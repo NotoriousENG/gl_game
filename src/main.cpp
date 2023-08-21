@@ -83,6 +83,10 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
+  // need opengl context to free texture
+  texture_anya.reset();
+  // sprite batcher must be destroyed before the renderer
+  spriteBatcher.reset();
   // destroy the renderer this has to be done before the window is destroyed
   renderer.reset();
 

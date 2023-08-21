@@ -50,7 +50,7 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
   this->SetScreenSize(windowSize);
 }
 
-SpriteBatch::~SpriteBatch() { glDeleteProgram(this->shaderProgram); }
+SpriteBatch::~SpriteBatch() { glDeleteBuffers(1, &this->vbo); }
 
 void SpriteBatch::Draw(glm::vec4 destRect, glm::vec4 srcRect, glm::vec4 color,
                        Texture *texture) {
