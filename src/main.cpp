@@ -35,11 +35,11 @@ void main_loop() {
       for (int k = 0; k < 10; k++) {
         spriteBatcher->Draw(
 
-            // position of the rectangle
+            // dest
             glm::vec4(100 + i * 50 + k * -10, 100 + j * 50 + k * -10, 50, 50),
 
-            // rectangle size
-            glm::vec4(0, 0, 300, 320),
+            // src
+            glm::vec4(0, 0, 64, 64),
 
             // color to tint the sprite
             glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1),
