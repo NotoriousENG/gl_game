@@ -14,12 +14,24 @@ Texture::Texture(const char *filename) {
     return;
   }
 
+  // Flip the image vertically (OpenGL expects the 0th row of pixels to be at
+  // the bottom of the texture)
+  SDL_Surface *flippedSurface = SDL_CreateRGBSurface(
+      0, surface->w, surface->h, surface->format->BitsPerPixel,
+      surface->format->Rmask, surface->format->Gmask, surface->format->Bmask,
+      surface->format->Amask);
+
+  for (int y = 0; y < surface->h; y++) {
+    memcpy((Uint8 *)flippedSurface->pixels + y * flippedSurface->pitch,
+           (Uint8 *)surface->pixels + (surface->h - y - 1) * surface->pitch,
+           surface->pitch);
+  }
+
   glGenTextures(1, &this->texture);
   glBindTexture(GL_TEXTURE_2D, this->texture);
 
-  // Load image data into texture
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, surface->pixels);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, flippedSurface->w, flippedSurface->h,
+               0, GL_RGBA, GL_UNSIGNED_BYTE, flippedSurface->pixels);
 
   // Set texture parameters
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -29,8 +41,9 @@ Texture::Texture(const char *filename) {
 
   // Unbind the texture
   glBindTexture(GL_TEXTURE_2D, 0);
-  // Free the surface
+  // Free the surfaces
   SDL_FreeSurface(surface);
+  SDL_FreeSurface(flippedSurface);
 }
 
 Texture::~Texture() { glDeleteTextures(1, &this->texture); }
