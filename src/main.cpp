@@ -45,7 +45,10 @@ void main_loop() {
             glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1),
 
             // texture of the sprite
-            texture_anya.get());
+            texture_anya.get(),
+
+            // rotation of the sprite in radians (1 degree per sprite)
+            (i + j * 10 + k * 100) * 0.0174533f);
 
         // Uncomment this line to see how much slower it is to call draw
         // separately for each sprite.

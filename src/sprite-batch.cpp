@@ -36,13 +36,37 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
   this->textureUniform = glGetUniformLocation(this->shaderProgram, "texture");
   this->texture = nullptr;
 
+  // Create and bind a VAO
+  glGenVertexArrays(1, &this->vao);
+  glBindVertexArray(this->vao);
+
+  // Create and bind the EBO
+  glGenBuffers(1, &this->ebo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
+
+  // Create and bind the VBO
   glGenBuffers(1, &this->vbo);
   glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+
+  // Configure vertex attribute pointers in the VAO
+
+  glEnableVertexAttribArray(0); // position
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)0);
+
+  glEnableVertexAttribArray(1); // uv
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                         (GLvoid *)sizeof(glm::vec2));
+
+  glEnableVertexAttribArray(2); // color
   glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                         (GLvoid *)sizeof(glm::vec4));
+
+  glEnableVertexAttribArray(3); // rotation
+  glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                        (GLvoid *)(2 * sizeof(glm::vec2) + sizeof(glm::vec4)));
+
+  // Unbind the VAO and VBO
+  glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   this->screenTransformUniform =
@@ -50,35 +74,56 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
   this->SetScreenSize(windowSize);
 }
 
-SpriteBatch::~SpriteBatch() { glDeleteBuffers(1, &this->vbo); }
+SpriteBatch::~SpriteBatch() {
+  glDeleteBuffers(1, &this->vbo);
+  glDeleteBuffers(1, &this->ebo);
+  glDeleteVertexArrays(1, &this->vao);
+}
 
 void SpriteBatch::Draw(glm::vec4 destRect, glm::vec4 srcRect, glm::vec4 color,
-                       Texture *texture) {
+                       Texture *texture, float rotation) {
   if (this->texture != texture) {
     this->Flush();
-
-    // @TODO memory manage texture
-
     this->texture = texture;
   }
 
-  this->vertices.push_back(Vertex(glm::vec2(destRect.x, destRect.y),
-                                  glm::vec2(srcRect.x, srcRect.y), color));
+  glm::vec2 center(destRect.x + destRect.z * 0.5f,
+                   destRect.y + destRect.w * 0.5f);
+
+  glm::vec2 topLeft(-destRect.z * 0.5f, -destRect.w * 0.5f);
+  glm::vec2 topRight(destRect.z * 0.5f, -destRect.w * 0.5f);
+  glm::vec2 bottomLeft(-destRect.z * 0.5f, destRect.w * 0.5f);
+  glm::vec2 bottomRight(destRect.z * 0.5f, destRect.w * 0.5f);
+
+  // Rotate the vertices
+  glm::mat2 rotationMatrix(glm::cos(rotation), -glm::sin(rotation),
+                           glm::sin(rotation), glm::cos(rotation));
+  topLeft = rotationMatrix * topLeft + center;
+  topRight = rotationMatrix * topRight + center;
+  bottomLeft = rotationMatrix * bottomLeft + center;
+  bottomRight = rotationMatrix * bottomRight + center;
+
+  // Calculate the vertex index offset for the current sprite
+  int vertexIndexOffset = this->vertices.size();
+
+  // Add vertices to the list
   this->vertices.push_back(
-      Vertex(glm::vec2(destRect.x + destRect.z, destRect.y),
-             glm::vec2(srcRect.z, srcRect.y), color));
+      Vertex(topLeft, glm::vec2(srcRect.x, srcRect.y), color));
   this->vertices.push_back(
-      Vertex(glm::vec2(destRect.x, destRect.y + destRect.w),
-             glm::vec2(srcRect.x, srcRect.w), color));
+      Vertex(topRight, glm::vec2(srcRect.z, srcRect.y), color));
   this->vertices.push_back(
-      Vertex(glm::vec2(destRect.x + destRect.z, destRect.y),
-             glm::vec2(srcRect.z, srcRect.y), color));
+      Vertex(bottomLeft, glm::vec2(srcRect.x, srcRect.w), color));
   this->vertices.push_back(
-      Vertex(glm::vec2(destRect.x, destRect.y + destRect.w),
-             glm::vec2(srcRect.x, srcRect.w), color));
-  this->vertices.push_back(
-      Vertex(glm::vec2(destRect.x + destRect.z, destRect.y + destRect.w),
-             glm::vec2(srcRect.z, srcRect.w), color));
+      Vertex(bottomRight, glm::vec2(srcRect.z, srcRect.w), color));
+
+  // Add indices for the two triangles forming the quad for the current sprite
+  // Add indices offset by vertexIndexOffset
+  this->indices.push_back(vertexIndexOffset + 0);
+  this->indices.push_back(vertexIndexOffset + 1);
+  this->indices.push_back(vertexIndexOffset + 2);
+  this->indices.push_back(vertexIndexOffset + 2);
+  this->indices.push_back(vertexIndexOffset + 1);
+  this->indices.push_back(vertexIndexOffset + 3);
 }
 
 void SpriteBatch::Flush() {
@@ -87,14 +132,22 @@ void SpriteBatch::Flush() {
   }
 
   glUseProgram(this->shaderProgram);
+  glBindVertexArray(this->vao); // Bind the VAO
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, this->texture->GetGLTexture());
   glUniform1i(this->textureUniform, 0);
 
+  // Upload the vertex data to the GPU
   glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
   glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(Vertex),
                &this->vertices[0], GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // Upload the index data to the GPU
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint),
+               &this->indices[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUniformMatrix3fv(this->screenTransformUniform, 1, GL_FALSE,
@@ -103,20 +156,26 @@ void SpriteBatch::Flush() {
   glEnableVertexAttribArray(0); // position
   glEnableVertexAttribArray(1); // uv
   glEnableVertexAttribArray(2); // color
+  glEnableVertexAttribArray(3); // rotation
 
-  glDrawArrays(GL_TRIANGLES, 0, this->vertices.size());
+  glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0);
 
   glDisableVertexAttribArray(0); // position
   glDisableVertexAttribArray(1); // uv
   glDisableVertexAttribArray(2); // color
+  glDisableVertexAttribArray(3); // rotation
 
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind the EBO
+  glBindVertexArray(0);                     // Unbind the VAO
   this->vertices.clear();
+  this->indices.clear();
 }
 
 void SpriteBatch::SetScreenSize(glm::vec2 windowSize) {
-  // openGL is [-1 to 1] on both axis, map from [0 to windowSize] to [-1 to 1]
-  this->screenTransform[0][0] = 2 / windowSize.x;
-  this->screenTransform[1][1] = 2 / windowSize.y;
-  this->screenTransform[2][0] = -1;
-  this->screenTransform[2][1] = -1;
+  // the top left should be 0,0 and the bottom right should be windowSize.x,
+  // windowSize.y
+  this->screenTransform[0][0] = 2.0f / windowSize.x;
+  this->screenTransform[1][1] = -2.0f / windowSize.y; // Negative to flip Y-axis
+  this->screenTransform[2][0] = -1.0f;
+  this->screenTransform[2][1] = 1.0f; // Adjusted to keep (0,0) at top-left
 }

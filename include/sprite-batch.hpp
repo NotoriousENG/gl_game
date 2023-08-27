@@ -21,7 +21,7 @@ public:
   ~SpriteBatch();
 
   void Draw(glm::vec4 destRect, glm::vec4 srcRect, glm::vec4 color,
-            Texture *texture);
+            Texture *texture, float rotation = 0.0f);
   void Flush();
 
   void SetScreenSize(glm::vec2 windowSize);
@@ -29,6 +29,11 @@ public:
 private:
   std::vector<Vertex> vertices;
   GLuint vbo;
+
+  std::vector<GLuint> indices;
+  GLuint ebo;
+
+  GLuint vao;
 
   Shader vertexShader;
   Shader fragmentShader;
