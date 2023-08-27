@@ -78,6 +78,8 @@ SpriteBatch::~SpriteBatch() {
   glDeleteBuffers(1, &this->vbo);
   glDeleteBuffers(1, &this->ebo);
   glDeleteVertexArrays(1, &this->vao);
+
+  glDeleteProgram(this->shaderProgram);
 }
 
 void SpriteBatch::Draw(glm::vec4 srcRect, Texture *texture, glm::vec2 position,
