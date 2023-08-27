@@ -35,20 +35,23 @@ void main_loop() {
       for (int k = 0; k < 10; k++) {
         spriteBatcher->Draw(
 
-            // dest
-            glm::vec4(100 + i * 50 + k * -10, 100 + j * 50 + k * -10, 50, 50),
-
             // src
             glm::vec4(0, 0, 64, 64),
-
-            // color to tint the sprite
-            glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1),
 
             // texture of the sprite
             texture_anya.get(),
 
+            // position of the sprite
+            glm::vec2(100 + i * 50 + k * -10, 100 + j * 50 + k * -10),
+
+            // scale of the sprite
+            glm::vec2(1, 1),
+
             // rotation of the sprite in radians (1 degree per sprite)
-            (i + j * 10 + k * 100) * 0.0174533f);
+            (i + j * 10 + k * 100) * 0.0174533f,
+
+            // color to tint the sprite
+            glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1));
 
         // Uncomment this line to see how much slower it is to call draw
         // separately for each sprite.
