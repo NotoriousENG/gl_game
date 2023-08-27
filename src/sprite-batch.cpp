@@ -82,11 +82,15 @@ SpriteBatch::~SpriteBatch() {
   glDeleteProgram(this->shaderProgram);
 }
 
-void SpriteBatch::Draw(glm::vec4 srcRect, Texture *texture, glm::vec2 position,
-                       glm::vec2 scale, float rotation, glm::vec4 color) {
+void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
+                       float rotation, glm::vec4 color, glm::vec4 srcRect) {
   if (this->texture != texture) {
     this->Flush();
     this->texture = texture;
+  }
+
+  if (srcRect == glm::vec4(0, 0, 0, 0)) {
+    srcRect = texture->GetTextureRect();
   }
 
   glm::vec2 center(position.x + (srcRect.z * scale.x) * 0.5f,

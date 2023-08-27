@@ -35,9 +35,6 @@ void main_loop() {
       for (int k = 0; k < 10; k++) {
         spriteBatcher->Draw(
 
-            // src
-            glm::vec4(0, 0, 64, 64),
-
             // texture of the sprite
             texture_anya.get(),
 
@@ -51,7 +48,10 @@ void main_loop() {
             (i + j * 10 + k * 100) * 0.0174533f,
 
             // color to tint the sprite
-            glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1));
+            glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1),
+
+            // src Rect
+            glm::vec4(0, 0, 64, 64));
 
         // Uncomment this line to see how much slower it is to call draw
         // separately for each sprite.

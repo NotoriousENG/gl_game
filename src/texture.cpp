@@ -35,3 +35,12 @@ Texture::Texture(const char *filename) {
 Texture::~Texture() { glDeleteTextures(1, &this->texture); }
 
 GLuint Texture::GetGLTexture() { return this->texture; }
+
+glm::vec4 Texture::GetTextureRect() {
+  glm::vec4 rect;
+  glBindTexture(GL_TEXTURE_2D, this->texture);
+  glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &rect.z);
+  glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &rect.w);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  return rect;
+}
