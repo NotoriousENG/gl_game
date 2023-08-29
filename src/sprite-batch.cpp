@@ -84,13 +84,16 @@ SpriteBatch::~SpriteBatch() {
 
 void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
                        float rotation, glm::vec4 color, glm::vec4 srcRect) {
+
+  const glm::vec4 textureRect = texture->GetTextureRect();
+
   if (this->texture != texture) {
     this->Flush();
     this->texture = texture;
   }
 
   if (srcRect == glm::vec4(0, 0, 0, 0)) {
-    srcRect = texture->GetTextureRect();
+    srcRect = textureRect;
   }
 
   glm::vec2 center(position.x + (srcRect.z * scale.x) * 0.5f,
@@ -106,25 +109,33 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
                               srcRect.w * scale.y * 0.5f);
 
   // Rotate the vertices
-  glm::mat2 rotationMatrix(glm::cos(rotation), -glm::sin(rotation),
-                           glm::sin(rotation), glm::cos(rotation));
+  const glm::mat2 rotationMatrix(glm::cos(rotation), -glm::sin(rotation),
+                                 glm::sin(rotation), glm::cos(rotation));
   scaledTopLeft = rotationMatrix * scaledTopLeft + center;
   scaledTopRight = rotationMatrix * scaledTopRight + center;
   scaledBottomLeft = rotationMatrix * scaledBottomLeft + center;
   scaledBottomRight = rotationMatrix * scaledBottomRight + center;
 
+  const float textureWidth = textureRect.z;
+  const float textureHeight = textureRect.w;
+
+  const glm::vec2 uvTopLeft(srcRect.x / textureWidth,
+                            srcRect.y / textureHeight);
+  const glm::vec2 uvTopRight((srcRect.x + srcRect.z) / textureWidth,
+                             srcRect.y / textureHeight);
+  const glm::vec2 uvBottomLeft(srcRect.x / textureWidth,
+                               (srcRect.y + srcRect.w) / textureHeight);
+  const glm::vec2 uvBottomRight((srcRect.x + srcRect.z) / textureWidth,
+                                (srcRect.y + srcRect.w) / textureHeight);
+
   // Calculate the vertex index offset for the current sprite
-  int vertexIndexOffset = this->vertices.size();
+  const int vertexIndexOffset = this->vertices.size();
 
   // Add vertices to the list
-  this->vertices.push_back(
-      Vertex(scaledTopLeft, glm::vec2(srcRect.x, srcRect.y), color));
-  this->vertices.push_back(
-      Vertex(scaledTopRight, glm::vec2(srcRect.z, srcRect.y), color));
-  this->vertices.push_back(
-      Vertex(scaledBottomLeft, glm::vec2(srcRect.x, srcRect.w), color));
-  this->vertices.push_back(
-      Vertex(scaledBottomRight, glm::vec2(srcRect.z, srcRect.w), color));
+  this->vertices.push_back(Vertex(scaledTopLeft, uvTopLeft, color));
+  this->vertices.push_back(Vertex(scaledTopRight, uvTopRight, color));
+  this->vertices.push_back(Vertex(scaledBottomLeft, uvBottomLeft, color));
+  this->vertices.push_back(Vertex(scaledBottomRight, uvBottomRight, color));
 
   // Add indices for the two triangles forming the quad for the current sprite
   // Add indices offset by vertexIndexOffset

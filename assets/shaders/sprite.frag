@@ -7,7 +7,4 @@ out vec4 fragColor;
 
 uniform sampler2D texture;
 
-void main(void) {
-  // texelFetch gets a pixel by its index in the texture instead of 0-1 spacing
-  fragColor = texelFetch(texture, ivec2(uv), 0) * color;
-}
+void main(void) { fragColor = texture2D(texture, uv) * color; }
