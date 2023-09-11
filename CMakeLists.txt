@@ -34,6 +34,7 @@ endif()
 
 # Add library subdirectories
 add_subdirectory(lib/glad)
+add_subdirectory(lib/flecs)
 
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp")
@@ -60,6 +61,9 @@ endif()
 # self published libraries
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/flecs)
+target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 

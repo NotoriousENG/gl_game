@@ -5,7 +5,9 @@
 
 #include <memory>
 
+#include "components.hpp"
 #include "defs.hpp"
+#include "flecs.h"
 #include "renderer.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
@@ -13,8 +15,9 @@
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
-static std::shared_ptr<Texture> texture_anya;
 static std::unique_ptr<SpriteBatch> spriteBatcher;
+
+static flecs::world world;
 
 void main_loop() {
   SDL_Event event;
@@ -27,40 +30,10 @@ void main_loop() {
   // Clear the screen
   renderer->Clear();
 
-  // Render sprites
-  // ...
-  // Loop and draw 1000 sprites to the screen
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 10; j++) {
-      for (int k = 0; k < 10; k++) {
-        spriteBatcher->Draw(
+  // run systems
+  world.progress();
 
-            // texture of the sprite
-            texture_anya.get(),
-
-            // position of the sprite
-            glm::vec2(100 + i * 50 + k * -10, 100 + j * 50 + k * -10),
-
-            // scale of the sprite
-            glm::vec2(1, 1),
-
-            // rotation of the sprite in radians (1 degree per sprite)
-            (i + j * 10 + k * 100) * 0.0174533f,
-
-            // color to tint the sprite
-            glm::vec4(i / 10.f, j / 10.f, k / 10.f, 1),
-
-            // src Rect
-            glm::vec4(0, 0, 64, 64));
-
-        // Uncomment this line to see how much slower it is to call draw
-        // separately for each sprite.
-        // spriteBatcher->Flush();
-      }
-    }
-  }
-  // Now that we have a collection of all the draws we want to make, send it all
-  // to the gpu to be drawn!
+  // draw all sprites in the batch
   spriteBatcher->Flush();
 
   // Swap buffers
@@ -74,10 +47,37 @@ int main(int argc, char *argv[]) {
   spriteBatcher =
       std::make_unique<SpriteBatch>(glm::vec2(WINDOW_WIDTH, WINDOW_HEIGHT));
 
-  texture_anya = std::make_shared<Texture>("assets/textures/anya.png");
+  std::shared_ptr texture_anya =
+      std::make_shared<Texture>("assets/textures/anya.png");
 
-  // std::shared_ptr<Texture> texture_tink =
-  //     std::make_shared<Texture>("assets/textures/tink.png");
+  std::string name = "Anya";
+  int count = 0;
+
+  // create entities
+  for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 10; j++) {
+      auto e = world.entity((name + " " + std::to_string(count)).c_str());
+      e.set<Transform2D>(
+          Transform2D(glm::vec2(i * 100, j * 100), glm::vec2(1, 1), 0));
+      e.set<Sprite>({texture_anya});
+      count++;
+    }
+  }
+
+  // mount systems
+  world.system<Transform2D, Sprite>().iter(
+      [](flecs::iter it, Transform2D *t, Sprite *s) {
+        for (int i : it) {
+          spriteBatcher->Draw(s[i].texture.get(), t[i].position, t[i].scale,
+                              t[i].rotation);
+        }
+      });
+
+  world.system<Transform2D>().iter([](flecs::iter it, Transform2D *t) {
+    for (int i : it) {
+      t[i].rotation += 1.0f * it.delta_time();
+    }
+  });
 
   // Main loop
   running = true;
@@ -88,6 +88,9 @@ int main(int argc, char *argv[]) {
     main_loop();
   }
 #endif
+
+  // reset the world to destruct all entities
+  world.reset();
 
   // need opengl context to free texture
   texture_anya.reset();
