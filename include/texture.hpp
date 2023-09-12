@@ -9,8 +9,10 @@ public:
 
   GLuint GetGLTexture();
 
-  glm::vec4 GetTextureRect();
+  glm::ivec4 GetTextureRect();
 
 private:
   GLuint texture;
+  int w;
+  int h;
 };

@@ -5,6 +5,8 @@
 Texture::Texture(const char *filename) {
   // Load image using SDL_image
   SDL_Surface *surface = IMG_Load(filename);
+  this->w = surface->w;
+  this->h = surface->h;
   if (!surface) {
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load texture: %s",
                  IMG_GetError());
@@ -36,11 +38,6 @@ Texture::~Texture() { glDeleteTextures(1, &this->texture); }
 
 GLuint Texture::GetGLTexture() { return this->texture; }
 
-glm::vec4 Texture::GetTextureRect() {
-  glm::vec4 rect;
-  glBindTexture(GL_TEXTURE_2D, this->texture);
-  glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &rect.z);
-  glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &rect.w);
-  glBindTexture(GL_TEXTURE_2D, 0);
-  return rect;
+glm::ivec4 Texture::GetTextureRect() {
+  return glm::ivec4(0, 0, this->w, this->h);
 }

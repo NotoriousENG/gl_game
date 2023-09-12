@@ -33,7 +33,8 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
     return;
   }
 
-  this->textureUniform = glGetUniformLocation(this->shaderProgram, "texture");
+  this->textureUniform =
+      glGetUniformLocation(this->shaderProgram, "albedoTexture");
   this->texture = nullptr;
 
   // Create and bind a VAO
@@ -85,7 +86,7 @@ SpriteBatch::~SpriteBatch() {
 void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
                        float rotation, glm::vec4 color, glm::vec4 srcRect) {
 
-  const glm::vec4 textureRect = texture->GetTextureRect();
+  const glm::ivec4 textureRect = texture->GetTextureRect();
 
   if (this->texture != texture) {
     this->Flush();
