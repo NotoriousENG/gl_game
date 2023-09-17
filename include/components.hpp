@@ -2,6 +2,7 @@
 #include "glm/glm.hpp"
 #include "texture.hpp"
 #include <memory>
+#include <string>
 
 struct Transform2D {
   glm::vec2 position;
@@ -32,4 +33,8 @@ struct Transform2D {
 
 struct Sprite {
   std::shared_ptr<Texture> texture;
+};
+
+struct Player {
+  std::string name;
 };

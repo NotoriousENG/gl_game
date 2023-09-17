@@ -8,6 +8,7 @@
 #include "components.hpp"
 #include "defs.hpp"
 #include "flecs.h"
+#include "input.hpp"
 #include "renderer.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
@@ -26,6 +27,9 @@ void main_loop() {
       running = false;
     }
   }
+  int num_keys;
+  const Uint8 *key_state = SDL_GetKeyboardState(&num_keys);
+  InputManager::Update(key_state, num_keys);
 
   // Clear the screen
   renderer->Clear();
@@ -50,21 +54,56 @@ int main(int argc, char *argv[]) {
   std::shared_ptr texture_anya =
       std::make_shared<Texture>("assets/textures/anya.png");
 
+  std::shared_ptr texture_tink =
+      std::make_shared<Texture>("assets/textures/tink.png");
+
   std::string name = "Anya";
   int count = 0;
 
+  auto Anya =
+      world.prefab("Anya")
+          .set<Transform2D>(Transform2D(glm::vec2(0, 0), glm::vec2(1, 1), 0))
+          .set<Sprite>({texture_anya});
+
+  auto Tink = world.prefab("Tink")
+                  .set<Transform2D>(
+                      Transform2D(glm::vec2(300, 300), glm::vec2(1, 1), 0))
+                  .set<Sprite>({texture_tink})
+                  .set<Player>({"Player 1"});
+
   // create entities
-  for (int i = 0; i < 10; i++) {
-    for (int j = 0; j < 10; j++) {
-      auto e = world.entity((name + " " + std::to_string(count)).c_str());
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 6; j++) {
+      auto e =
+          world.entity((name + " " + std::to_string(count)).c_str()).is_a(Anya);
       e.set<Transform2D>(
           Transform2D(glm::vec2(i * 100, j * 100), glm::vec2(1, 1), 0));
-      e.set<Sprite>({texture_anya});
       count++;
     }
   }
 
-  // mount systems
+  // create tink
+  auto player = world.entity("player").is_a(Tink);
+
+  // move anyas
+  world.system<Transform2D>().without<Player>().iter(
+      [](flecs::iter it, Transform2D *t) {
+        for (int i : it) {
+          t[i].rotation += 1.0f * it.delta_time();
+        }
+      });
+
+  // player movement
+  world.system<Player, Transform2D>().iter(
+      [](flecs::iter it, Player *p, Transform2D *t) {
+        const float speed = 200.0f;
+        const glm::vec2 input = InputManager::GetVectorMovement();
+        for (int i : it) {
+          t[i].position += input * speed * it.delta_time();
+        }
+      });
+
+  // render sprites
   world.system<Transform2D, Sprite>().iter(
       [](flecs::iter it, Transform2D *t, Sprite *s) {
         for (int i : it) {
@@ -72,12 +111,6 @@ int main(int argc, char *argv[]) {
                               t[i].rotation);
         }
       });
-
-  world.system<Transform2D>().iter([](flecs::iter it, Transform2D *t) {
-    for (int i : it) {
-      t[i].rotation += 1.0f * it.delta_time();
-    }
-  });
 
   // Main loop
   running = true;
