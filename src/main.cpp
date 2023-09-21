@@ -3,18 +3,13 @@
 #include <emscripten/html5.h>
 #endif
 
-<<<<<<< HEAD
-#include "net_manager.cpp"
-#include "renderer.hpp"
-#include "window.hpp"
-=======
 #include <memory>
->>>>>>> main
 
 #include "components.hpp"
 #include "defs.hpp"
 #include "flecs.h"
 #include "input.hpp"
+#include "net_manager.cpp"
 #include "renderer.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
