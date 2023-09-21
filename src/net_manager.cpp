@@ -10,8 +10,8 @@
 #include <memory>
 #include <random>
 #include <stdexcept>
-#include <thread>
 #include <unordered_map>
+#include <SDL2/SDL_log.h>
 
 using namespace std::chrono_literals;
 using nlohmann::json;
@@ -34,7 +34,7 @@ private:
   void createDataChannel(shared_ptr<rtc::PeerConnection> pc, std::string id) {
     // We are the offerer, so create a data channel to initiate the process
     const std::string label = "test";
-    printf("creating datachannel\n");
+    SDL_Log("creating datachannel\n");
     auto dc = pc->createDataChannel(label);
 
     setupDataChannel(dc, id);
@@ -44,12 +44,12 @@ private:
 
   void setupDataChannel(std::shared_ptr<rtc::DataChannel> dc, std::string id) {
     dc->onOpen([this, id, wdc = make_weak_ptr(dc)]() {
-      printf("opened channel with %s\n", id.c_str());
+      SDL_Log("opened channel with %s\n", id.c_str());
       onConnection(id);
     });
 
     dc->onClosed([id]() { printf("creating datachannel\n");
-      printf("closed channel with %s\n", id.c_str());
+      SDL_Log("closed channel with %s\n", id.c_str());
     });
 
     dc->onMessage([this, id, wdc = make_weak_ptr(dc)](auto data) {
@@ -89,7 +89,8 @@ private:
     });
 
     pc->onDataChannel([this, id](shared_ptr<rtc::DataChannel> dc) {
-      printf("recieved channel from %s with label %s\n", id.c_str(), dc->label().c_str());
+      SDL_Log("recieved channel from %s with label %s\n", id.c_str(),
+              dc->label().c_str());
       setupDataChannel(dc, id);
       dataChannels.emplace(id, dc);
     });
@@ -119,7 +120,7 @@ public:
     ws = std::make_shared<rtc::WebSocket>();
 
     ws->onOpen([this, wws = make_weak_ptr(ws)]() {
-      printf("wsopen");
+      SDL_Log("wsopen\n");
       if (auto ws = wws.lock()) {
         if (hostJoin == "host") {
           json message = {{"type", "host"}};
@@ -132,11 +133,9 @@ public:
       }
     });
 
-    ws->onError([](std::string s) {
-      printf("wserror");
-    });
+    ws->onError([](std::string s) { SDL_Log("wserror\n"); });
 
-    ws->onClosed([]() { printf("wsclosed"); });
+    ws->onClosed([]() { SDL_Log("wsclosed\n"); });
 
     ws->onMessage([this, wws = make_weak_ptr(ws)](auto data) {
       // data holds either std::string or rtc::binary; we require a string
@@ -146,7 +145,7 @@ public:
 
       auto messageText = std::get<std::string>(data);
 
-      printf("got ws message: %s\n", messageText.c_str());
+      SDL_Log("got ws message: %s\n", messageText.c_str());
 
       json message = json::parse(messageText);
 
@@ -163,7 +162,7 @@ public:
           return;
         }
         auto code = it->get<std::string>();
-        printf("assigned room code: %s", code.c_str());
+        SDL_Log("assigned room code: %s\n", code.c_str());
         return;
       } else if (type == "exception") {
         it = message.find("message");
@@ -212,7 +211,7 @@ public:
     });
 
     ws->open("wss://gl-game-backend.deno.dev");
-    printf("swag.\n");
+    SDL_Log("swag. (talking to deno)\n");
   }
 
   void sendTo(std::string id, std::string message) {

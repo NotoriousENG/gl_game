@@ -15,6 +15,7 @@
 #include "sprite-batch.hpp"
 #include "texture.hpp"
 #include "window.hpp"
+#include <SDL2/SDL_log.h>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -119,11 +120,11 @@ int main(int argc, char *argv[]) {
   net = new NetManager(
       "join", "room-RisingStuck",
       [&net](std::string id) {
-        printf("connected to player %s\n", id.c_str());
+        SDL_Log("connected to player %s\n", id.c_str());
         net->sendTo(id, "hi!");
       },
       [](std::string id, std::string message) { 
-          printf("Got message: %s\n", message.c_str());
+          SDL_Log("Got message: %s\n", message.c_str());
       });
   net->connectToSignaling();
 
