@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <SDL2/SDL_log.h>
 #include <algorithm>
 #include <chrono>
 #include <future>
@@ -11,7 +12,6 @@
 #include <random>
 #include <stdexcept>
 #include <unordered_map>
-#include <SDL2/SDL_log.h>
 
 using namespace std::chrono_literals;
 using nlohmann::json;
@@ -48,7 +48,8 @@ private:
       onConnection(id);
     });
 
-    dc->onClosed([id]() { printf("creating datachannel\n");
+    dc->onClosed([id]() {
+      printf("creating datachannel\n");
       SDL_Log("closed channel with %s\n", id.c_str());
     });
 
@@ -184,7 +185,6 @@ public:
         return;
       }
       auto id = it->get<std::string>();
-
 
       // get the peer connection based on the id
       // or make it if it doesn't yet exist
