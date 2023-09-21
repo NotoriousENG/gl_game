@@ -24,12 +24,16 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_compile_definitions("EMSCRIPTEN")
-    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s FULL_ES3 -gsource-map --preload-file assets --use-preload-plugins")
+    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s FULL_ES3 -s ASSERTIONS=2 -s INITIAL_MEMORY=64MB -s TOTAL_STACK=32MB -s ALLOW_MEMORY_GROWTH=1 -gsource-map --preload-file assets --use-preload-plugins")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
     set(CMAKE_EXECUTABLE_SUFFIX .html)
 else()
+    # if CLANG/ GCC use GNU99 (This ensures that aflecs ddons that rely on time & socket functions are compiled correctly.)
+    if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+    endif()
     find_package(SDL2 REQUIRED)
     find_package(sdl2-mixer REQUIRED)
     find_package(sdl2-image REQUIRED)
@@ -38,6 +42,7 @@ endif()
 
 # Add library subdirectories
 add_subdirectory(lib/glad)
+<<<<<<< HEAD
 add_subdirectory(lib/json)
 
 
@@ -51,12 +56,37 @@ else()
     add_subdirectory(lib/libdatachannel)
     target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
     target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-static)
+=======
+add_subdirectory(lib/flecs)
+
+# Add source to this project's executable.
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp" "src/input.cpp")
+
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+    add_subdirectory(lib/datachannel-wasm)
+    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-wasm)
+else()
+    option(NO_MEDIA "Disable media support in libdatachannel" ON)
+    add_subdirectory(lib/libdatachannel)
+    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel)
+    if (WIN32)
+        # windows needs the dll in the same dir as the exe
+        set_target_properties(datachannel PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+            ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+    endif()
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
+>>>>>>> main
 endif()
 
 
 # self published libraries
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 
@@ -96,7 +126,7 @@ if (WIN32)
         COMMAND echo Copying assets to ${CMAKE_CURRENT_BINARY_DIR}/assets
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
     )
-    add_dependencies(${PROJECT_NAME} copy_assets)
+    add_dependencies(${PROJECT_NAME} copy_assets) 
 else()
     add_custom_target(copy_assets
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
