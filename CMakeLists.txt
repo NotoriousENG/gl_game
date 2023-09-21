@@ -9,6 +9,10 @@ project ("GlGame")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+SET(NO_MEDIA ON CACHE BOOL "Disable media support in libdatachannel")
+SET(USE_SYSTEM_JSON ON CACHE BOOL "Use system Nlohmann JSON")
+SET(NO_EXAMPLES ON CACHE BOOL "Disable examples")
+
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -38,27 +42,20 @@ endif()
 
 # Add library subdirectories
 add_subdirectory(lib/glad)
+add_subdirectory(lib/json)
 add_subdirectory(lib/flecs)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp" "src/input.cpp")
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp" "src/input.cpp" "src/net_manager.cpp")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_subdirectory(lib/datachannel-wasm)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel-wasm/wasm/include)
     target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-wasm)
 else()
-    option(NO_MEDIA "Disable media support in libdatachannel" ON)
     add_subdirectory(lib/libdatachannel)
-    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel)
-    if (WIN32)
-        # windows needs the dll in the same dir as the exe
-        set_target_properties(datachannel PROPERTIES
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-            ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-        )
-    endif()
     target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
+    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-static)
 endif()
 
 
@@ -69,6 +66,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glad)
 target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/json/include)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json)
 
 # if this is a release build #define DEBUG 1
 if (NOT CMAKE_BUILD_TYPE MATCHES Release) # append AND false to disable in debug

@@ -3,16 +3,17 @@
 #include <emscripten/html5.h>
 #endif
 
-#include <memory>
-
 #include "components.hpp"
 #include "defs.hpp"
 #include "flecs.h"
 #include "input.hpp"
+#include "net_manager.cpp"
 #include "renderer.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
 #include "window.hpp"
+#include <SDL2/SDL_log.h>
+#include <memory>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -111,6 +112,19 @@ int main(int argc, char *argv[]) {
                               t[i].rotation);
         }
       });
+
+  // Get connections
+  NetManager *net;
+  net = new NetManager(
+      "join", "room-RisingStuck",
+      [&net](std::string id) {
+        SDL_Log("connected to player %s\n", id.c_str());
+        net->sendTo(id, "hi!");
+      },
+      [](std::string id, std::string message) {
+        SDL_Log("Got message: %s\n", message.c_str());
+      });
+  net->connectToSignaling();
 
   // Main loop
   running = true;
