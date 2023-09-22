@@ -40,8 +40,15 @@ endif()
 add_subdirectory(lib/glad)
 add_subdirectory(lib/flecs)
 
+# Set the TMXLITE_STATIC_LIB option to TRUE to request static linking
+SET(TMXLITE_STATIC_LIB TRUE CACHE BOOL "Should tmxlite be built as a static or shared lib?")
+add_subdirectory(lib/tmxlite/tmxlite)
+
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp" "src/input.cpp")
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" 
+    "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp" "src/input.cpp" 
+    "src/tilemap.cpp"
+)
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_subdirectory(lib/datachannel-wasm)
@@ -67,6 +74,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib
 target_link_libraries(${PROJECT_NAME} PRIVATE glad)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/tmxlite/tmxlite/include)
+target_link_libraries(${PROJECT_NAME} PRIVATE tmxlite)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 

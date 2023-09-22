@@ -13,6 +13,7 @@
 #include "sprite-batch.hpp"
 #include "texture.hpp"
 #include "window.hpp"
+#include "tilemap.hpp"
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -57,13 +58,9 @@ int main(int argc, char *argv[]) {
   std::shared_ptr texture_tink =
       std::make_shared<Texture>("assets/textures/tink.png");
 
-  std::string name = "Anya";
-  int count = 0;
+  Tilemap tilemap = Tilemap("assets/demo.tmx");
 
-  auto Anya =
-      world.prefab("Anya")
-          .set<Transform2D>(Transform2D(glm::vec2(0, 0), glm::vec2(1, 1), 0))
-          .set<Sprite>({texture_anya});
+  int count = 0;
 
   auto Tink = world.prefab("Tink")
                   .set<Transform2D>(
@@ -71,27 +68,16 @@ int main(int argc, char *argv[]) {
                   .set<Sprite>({texture_tink})
                   .set<Player>({"Player 1"});
 
-  // create entities
-  for (int i = 0; i < 8; i++) {
-    for (int j = 0; j < 6; j++) {
-      auto e =
-          world.entity((name + " " + std::to_string(count)).c_str()).is_a(Anya);
-      e.set<Transform2D>(
-          Transform2D(glm::vec2(i * 100, j * 100), glm::vec2(1, 1), 0));
-      count++;
-    }
+  for (int i = 0; i < tilemap.textures.size(); i++) {
+    std::string name = "tileset " + std::to_string(i);
+	auto e = world.entity(name.c_str());
+	e.set<Transform2D>(
+		Transform2D(glm::vec2(i * 10, 0), glm::vec2(1.f, 1.f), 0));
+        e.set<Sprite>({tilemap.textures[i]});
   }
 
   // create tink
   auto player = world.entity("player").is_a(Tink);
-
-  // move anyas
-  world.system<Transform2D>().without<Player>().iter(
-      [](flecs::iter it, Transform2D *t) {
-        for (int i : it) {
-          t[i].rotation += 1.0f * it.delta_time();
-        }
-      });
 
   // player movement
   world.system<Player, Transform2D>().iter(
@@ -127,6 +113,8 @@ int main(int argc, char *argv[]) {
 
   // need opengl context to free texture
   texture_anya.reset();
+  texture_tink.reset();
+  tilemap.textures.clear();
   // sprite batcher must be destroyed before the renderer
   spriteBatcher.reset();
   // destroy the renderer this has to be done before the window is destroyed

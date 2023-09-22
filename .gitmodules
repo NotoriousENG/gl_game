@@ -14,3 +14,6 @@
 [submodule "lib/flecs"]
 	path = lib/flecs
 	url = https://github.com/SanderMertens/flecs
+[submodule "lib/tmxlite"]
+	path = lib/tmxlite
+	url = https://github.com/fallahn/tmxlite
