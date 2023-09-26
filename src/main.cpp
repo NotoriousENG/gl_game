@@ -21,6 +21,8 @@ static std::unique_ptr<SpriteBatch> spriteBatcher;
 
 static flecs::world world;
 
+static std::unique_ptr<Tilemap> tilemap;
+
 void main_loop() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
@@ -34,6 +36,10 @@ void main_loop() {
 
   // Clear the screen
   renderer->Clear();
+
+  tilemap->Draw(spriteBatcher.get()); // draw the tilemap
+  // draw all sprites in the batch
+  spriteBatcher->Flush();
 
   // run systems
   world.progress();
@@ -58,7 +64,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr texture_tink =
       std::make_shared<Texture>("assets/textures/tink.png");
 
-  Tilemap tilemap = Tilemap("assets/demo.tmx");
+  tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   int count = 0;
 
@@ -67,14 +73,6 @@ int main(int argc, char *argv[]) {
                       Transform2D(glm::vec2(300, 300), glm::vec2(1, 1), 0))
                   .set<Sprite>({texture_tink})
                   .set<Player>({"Player 1"});
-
-  for (int i = 0; i < tilemap.textures.size(); i++) {
-    std::string name = "tileset " + std::to_string(i);
-	auto e = world.entity(name.c_str());
-	e.set<Transform2D>(
-		Transform2D(glm::vec2(i * 10, 0), glm::vec2(1.f, 1.f), 0));
-        e.set<Sprite>({tilemap.textures[i]});
-  }
 
   // create tink
   auto player = world.entity("player").is_a(Tink);
@@ -114,7 +112,7 @@ int main(int argc, char *argv[]) {
   // need opengl context to free texture
   texture_anya.reset();
   texture_tink.reset();
-  tilemap.textures.clear();
+  tilemap.reset();
   // sprite batcher must be destroyed before the renderer
   spriteBatcher.reset();
   // destroy the renderer this has to be done before the window is destroyed
