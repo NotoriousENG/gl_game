@@ -12,8 +12,8 @@
 #include "renderer.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
-#include "window.hpp"
 #include "tilemap.hpp"
+#include "window.hpp"
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
