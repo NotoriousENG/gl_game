@@ -7,7 +7,7 @@
 #include "defs.hpp"
 #include "flecs.h"
 #include "input.hpp"
-#include "net_manager.cpp"
+#include "net_manager.hpp"
 #include "renderer.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
@@ -98,8 +98,7 @@ int main(int argc, char *argv[]) {
       });
 
   // Get connections
-  NetManager *net;
-  net = new NetManager(
+  std::unique_ptr<NetManager> net = std::make_unique<NetManager>(
       "join", "room-RisingStuck",
       [&net](std::string id) {
         SDL_Log("connected to player %s\n", id.c_str());
