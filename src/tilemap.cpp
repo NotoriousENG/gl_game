@@ -13,16 +13,7 @@ Tilemap::Tilemap(const char *path) {
   }
 }
 
-Tilemap::~Tilemap() {
-  for (auto &ss : this->subsets) {
-    if (ss.vbo) {
-      glDeleteBuffers(1, &ss.vbo);
-    }
-    if (ss.lookup) {
-      glDeleteTextures(1, &ss.lookup);
-    }
-  }
-}
+Tilemap::~Tilemap() {}
 
 // @TODO: use a pixel buffer and do this on the GPU instead of drawing a bunch
 // of quads
@@ -34,7 +25,6 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
     if (layer->getType() != tmx::Layer::Type::Tile) {
       continue;
     }
-
     // cast to a tile layer
     auto tileLayer = layer->getLayerAs<tmx::TileLayer>();
 
@@ -47,10 +37,9 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
           continue;
         }
 
-        // get the subset for this tile
-        auto &subset = this->subsets[tile.ID - 1];
         // get the texture for this tile
-        auto &texture = this->textures[0];
+        auto &texture = this->textures[0]; // @TODO: support multiple tilesets
+
         // get the position of the tile
         glm::vec2 position =
             glm::vec2(x * map.getTileSize().x, y * map.getTileSize().y);
