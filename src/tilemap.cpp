@@ -20,38 +20,39 @@ Tilemap::~Tilemap() {}
 void Tilemap::Draw(SpriteBatch *spriteBatch) {
   // loop over the map's layers
   for (int i = 0; i < map.getLayers().size(); i++) {
-    auto &layer = map.getLayers()[i];
+    const auto &layer = map.getLayers()[i];
     // skip all layers that are not tile layers
     if (layer->getType() != tmx::Layer::Type::Tile) {
       continue;
     }
     // cast to a tile layer
-    auto tileLayer = layer->getLayerAs<tmx::TileLayer>();
+    const auto tileLayer = layer->getLayerAs<tmx::TileLayer>();
 
     // loop over all the tiles in the layer (x and y)
     for (int x = 0; x < tileLayer.getSize().x; x++) {
       for (int y = 0; y < tileLayer.getSize().y; y++) {
         // draw the tile
-        auto tile = tileLayer.getTiles()[x + y * tileLayer.getSize().x];
+        const auto tile = tileLayer.getTiles()[x + y * tileLayer.getSize().x];
         if (tile.ID == 0) {
           continue;
         }
 
         // get the texture for this tile
-        auto &texture = this->textures[0]; // @TODO: support multiple tilesets
+        const auto &texture =
+            this->textures[0]; // @TODO: support multiple tilesets
 
         // get the position of the tile
-        glm::vec2 position =
+        const glm::vec2 position =
             glm::vec2(x * map.getTileSize().x, y * map.getTileSize().y);
 
         // get the xy index of the tile in the tileset
-        int tileX =
-            (tile.ID - 1) % (texture->GetTextureRect().z / map.getTileSize().x);
-        int tileY =
-            (tile.ID + 1) / (texture->GetTextureRect().w / map.getTileSize().y);
+        const int tilesetColumns =
+            texture->GetTextureRect().z / map.getTileSize().x;
+        const int tileX = (tile.ID - 1) % tilesetColumns;
+        const int tileY = (tile.ID - 1) / tilesetColumns;
 
         // create the src rect for the image from the tileset
-        glm::vec4 srcRect =
+        const glm::vec4 srcRect =
             glm::vec4(tileX * map.getTileSize().x, tileY * map.getTileSize().y,
                       map.getTileSize().x, map.getTileSize().y);
 
