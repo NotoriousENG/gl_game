@@ -1,3 +1,4 @@
+#pragma once
 #include "rtc/rtc.hpp"
 #include <functional>
 #include <string>
@@ -170,12 +171,6 @@ public:
         if (it == message.end()) {
           return;
         }
-        auto exceptionMessage = it->get<std::string>();
-        it = message.find("code");
-        if (it == message.end()) {
-          return;
-        }
-        auto code = it->get<std::string>();
         return;
       }
 
