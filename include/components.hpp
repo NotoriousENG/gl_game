@@ -38,3 +38,7 @@ struct Sprite {
 struct Player {
   std::string name;
 };
+
+struct Camera {
+    glm::vec2 position;
+};

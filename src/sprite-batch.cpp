@@ -70,9 +70,11 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  this->screenTransformUniform =
-      glGetUniformLocation(this->shaderProgram, "screenTransform");
-  this->SetScreenSize(windowSize);
+  this->projectionUniform =
+      glGetUniformLocation(this->shaderProgram, "projection");
+  this->viewUniform = glGetUniformLocation(this->shaderProgram, "view");
+
+  this->SetProjection(windowSize);
 }
 
 SpriteBatch::~SpriteBatch() {
@@ -81,6 +83,11 @@ SpriteBatch::~SpriteBatch() {
   glDeleteVertexArrays(1, &this->vao);
 
   glDeleteProgram(this->shaderProgram);
+}
+
+void SpriteBatch::UpdateCamera(glm::vec2 position) {
+    // update the view, so that the player is always in the center of the screen
+    this->view = glm::translate(glm::mat4(1.0f), glm::vec3(-position.x + this->windowSize.x / 2, -position.y + this->windowSize.y / 2, 0.0f));
 }
 
 void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
@@ -158,6 +165,8 @@ void SpriteBatch::Flush() {
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, this->texture->GetGLTexture());
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glUniform1i(this->textureUniform, 0);
 
   // Upload the vertex data to the GPU
@@ -172,8 +181,10 @@ void SpriteBatch::Flush() {
                &this->indices[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  glUniformMatrix3fv(this->screenTransformUniform, 1, GL_FALSE,
-                     glm::value_ptr(this->screenTransform));
+  glUniformMatrix4fv(this->projectionUniform, 1, GL_FALSE,
+                     glm::value_ptr(this->projection));
+
+  glUniformMatrix4fv(this->viewUniform, 1, GL_FALSE, glm::value_ptr(this->view));
 
   glEnableVertexAttribArray(0); // position
   glEnableVertexAttribArray(1); // uv
@@ -193,11 +204,8 @@ void SpriteBatch::Flush() {
   this->indices.clear();
 }
 
-void SpriteBatch::SetScreenSize(glm::vec2 windowSize) {
-  // the top left should be 0,0 and the bottom right should be windowSize.x,
-  // windowSize.y
-  this->screenTransform[0][0] = 2.0f / windowSize.x;
-  this->screenTransform[1][1] = -2.0f / windowSize.y; // Negative to flip Y-axis
-  this->screenTransform[2][0] = -1.0f;
-  this->screenTransform[2][1] = 1.0f; // Adjusted to keep (0,0) at top-left
+void SpriteBatch::SetProjection(glm::vec2 windowSize) {
+  // create a projection matrix that will make the screen coordinates (0,0) top left to (windowSize.x, windowSize.y) bottom right
+  this->windowSize = windowSize;
+  this->projection = glm::ortho(0.0f, this->windowSize.x, this->windowSize.y, 0.0f);
 }
