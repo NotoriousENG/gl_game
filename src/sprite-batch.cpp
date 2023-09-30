@@ -70,9 +70,11 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  this->screenTransformUniform =
-      glGetUniformLocation(this->shaderProgram, "screenTransform");
-  this->SetScreenSize(windowSize);
+  this->projectionUniform =
+      glGetUniformLocation(this->shaderProgram, "projection");
+  this->viewUniform = glGetUniformLocation(this->shaderProgram, "view");
+
+  this->SetProjection(windowSize);
 }
 
 SpriteBatch::~SpriteBatch() {
@@ -83,18 +85,45 @@ SpriteBatch::~SpriteBatch() {
   glDeleteProgram(this->shaderProgram);
 }
 
+void SpriteBatch::UpdateCamera(glm::vec2 position) {
+  // update the view, so that the target is always in the center of the screen
+  this->cameraPosition = position;
+  this->view = glm::translate(
+      glm::mat4(1.0f), glm::vec3(-position.x + this->windowSize.x / 2,
+                                 -position.y + this->windowSize.y / 2, 0.0f));
+}
+
 void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
                        float rotation, glm::vec4 color, glm::vec4 srcRect) {
-
-  const glm::ivec4 textureRect = texture->GetTextureRect();
 
   if (this->texture != texture) {
     this->Flush();
     this->texture = texture;
   }
 
+  const glm::ivec4 textureRect =
+      texture != nullptr ? texture->GetTextureRect() : glm::ivec4(0, 0, 1, 1);
   if (srcRect == glm::vec4(0, 0, 0, 0)) {
     srcRect = textureRect;
+  }
+
+  // Sprite culling
+  // don't draw if outside of the camera rect bounds
+  const auto bounds =
+      this->windowSize /*- glm::vec2(128, 128)*/; // uncomment this to see the
+                                                  // culling
+  SDL_Rect cameraRectSDL = {
+      static_cast<int>(static_cast<int>(this->cameraPosition.x) - bounds.x / 2),
+      static_cast<int>(static_cast<int>(this->cameraPosition.y) - bounds.y / 2),
+      static_cast<int>(bounds.x), static_cast<int>(bounds.y)};
+  // get the bounding rect of the sprite (@TODO: account for rotation)
+  SDL_Rect spriteRectSDL = {static_cast<int>(position.x),
+                            static_cast<int>(position.y),
+                            static_cast<int>(srcRect.z * scale.x),
+                            static_cast<int>(srcRect.w * scale.y)};
+  // check if the sprite is outside the camera rect
+  if (!SDL_HasIntersection(&cameraRectSDL, &spriteRectSDL)) {
+    return;
   }
 
   glm::vec2 center(position.x + (srcRect.z * scale.x) * 0.5f,
@@ -149,16 +178,30 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
 }
 
 void SpriteBatch::Flush() {
-  if (this->vertices.size() == 0 || this->texture == nullptr) {
+  if (this->vertices.size() == 0) {
     return;
   }
 
   glUseProgram(this->shaderProgram);
   glBindVertexArray(this->vao); // Bind the VAO
 
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, this->texture->GetGLTexture());
-  glUniform1i(this->textureUniform, 0);
+  GLuint whiteTexture;
+
+  if (this->texture == nullptr) {
+    // If the texture is undefined, bind a 1x1 white texture
+    glGenTextures(1, &whiteTexture);
+    glBindTexture(GL_TEXTURE_2D, whiteTexture);
+    unsigned char whitePixel[] = {255, 255, 255, 255}; // White color
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 whitePixel);
+    glUniform1i(this->textureUniform, 0);
+  } else {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, this->texture->GetGLTexture());
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glUniform1i(this->textureUniform, 0);
+  }
 
   // Upload the vertex data to the GPU
   glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
@@ -172,8 +215,11 @@ void SpriteBatch::Flush() {
                &this->indices[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  glUniformMatrix3fv(this->screenTransformUniform, 1, GL_FALSE,
-                     glm::value_ptr(this->screenTransform));
+  glUniformMatrix4fv(this->projectionUniform, 1, GL_FALSE,
+                     glm::value_ptr(this->projection));
+
+  glUniformMatrix4fv(this->viewUniform, 1, GL_FALSE,
+                     glm::value_ptr(this->view));
 
   glEnableVertexAttribArray(0); // position
   glEnableVertexAttribArray(1); // uv
@@ -191,13 +237,16 @@ void SpriteBatch::Flush() {
   glBindVertexArray(0);                     // Unbind the VAO
   this->vertices.clear();
   this->indices.clear();
+  if (this->texture == nullptr) {
+    // Delete the temporary white texture if it was created
+    glDeleteTextures(1, &whiteTexture);
+  }
 }
 
-void SpriteBatch::SetScreenSize(glm::vec2 windowSize) {
-  // the top left should be 0,0 and the bottom right should be windowSize.x,
-  // windowSize.y
-  this->screenTransform[0][0] = 2.0f / windowSize.x;
-  this->screenTransform[1][1] = -2.0f / windowSize.y; // Negative to flip Y-axis
-  this->screenTransform[2][0] = -1.0f;
-  this->screenTransform[2][1] = 1.0f; // Adjusted to keep (0,0) at top-left
+void SpriteBatch::SetProjection(glm::vec2 windowSize) {
+  // create a projection matrix that will make the screen coordinates (0,0)
+  // top left to (windowSize.x, windowSize.y) bottom right
+  this->windowSize = windowSize;
+  this->projection =
+      glm::ortho(0.0f, this->windowSize.x, this->windowSize.y, 0.0f);
 }

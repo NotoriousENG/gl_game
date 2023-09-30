@@ -53,11 +53,12 @@ void main_loop() {
 }
 
 int main(int argc, char *argv[]) {
-  Window window(GAME_NAME, WINDOW_WIDTH, WINDOW_HEIGHT);
+  const auto initial_window_size = glm::vec2(800, 600);
+  Window window(GAME_NAME, initial_window_size.x, initial_window_size.y);
   renderer = std::make_unique<Renderer>(&window);
 
-  spriteBatcher =
-      std::make_unique<SpriteBatch>(glm::vec2(WINDOW_WIDTH, WINDOW_HEIGHT));
+  spriteBatcher = std::make_unique<SpriteBatch>(
+      glm::vec2(initial_window_size.x, initial_window_size.y));
 
   std::shared_ptr texture_anya =
       std::make_shared<Texture>("assets/textures/anya.png");
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
 
   int count = 0;
 
+  // prefabs
   auto Tink = world.prefab("Tink")
                   .set<Transform2D>(
                       Transform2D(glm::vec2(300, 300), glm::vec2(1, 1), 0))
@@ -78,15 +80,25 @@ int main(int argc, char *argv[]) {
   // create tink
   auto player = world.entity("player").is_a(Tink);
 
-  // player movement
-  world.system<Player, Transform2D>().iter(
-      [](flecs::iter it, Player *p, Transform2D *t) {
+  world.set<Camera>({.position = glm::vec2(0, 0)});
+
+  // player movement + update camera
+  world.system<Player, Transform2D, Sprite>().iter(
+      [](flecs::iter it, Player *p, Transform2D *t, Sprite *s) {
         const float speed = 200.0f;
         const glm::vec2 input = InputManager::GetVectorMovement();
         for (int i : it) {
           t[i].position += input * speed * it.delta_time();
         }
+        const auto rect = s[0].texture->GetTextureRect();
+        glm::vec2 offset = glm::vec2(rect.z, rect.w) / 2.0f;
+        world.get_mut<Camera>()->position = t[0].position + offset;
       });
+
+  // update sprite batcher uniforms from camera
+  world.system<Camera>().iter([](flecs::iter it, Camera *c) {
+    spriteBatcher->UpdateCamera(c->position);
+  });
 
   // render sprites
   world.system<Transform2D, Sprite>().iter(

@@ -21,13 +21,15 @@ public:
   SpriteBatch(glm::vec2 windowSize);
   ~SpriteBatch();
 
+  void UpdateCamera(glm::vec2 position);
+
   void Draw(Texture *texture, glm::vec2 position,
             glm::vec2 scale = glm::vec2(1, 1), float rotation = 0.0f,
             glm::vec4 color = glm::vec4(1, 1, 1, 1),
             glm::vec4 srcRect = glm::vec4(0, 0, 0, 0));
   void Flush();
 
-  void SetScreenSize(glm::vec2 windowSize);
+  void SetProjection(glm::vec2 windowSize);
 
 private:
   std::vector<Vertex> vertices;
@@ -46,6 +48,12 @@ private:
   Texture *texture;
   GLuint textureUniform;
 
-  glm::mat3 screenTransform;
-  GLuint screenTransformUniform;
+  glm::mat4 projection;
+  GLuint projectionUniform;
+
+  glm::mat4 view;
+  GLuint viewUniform;
+
+  glm::vec2 windowSize;
+  glm::vec2 cameraPosition;
 };

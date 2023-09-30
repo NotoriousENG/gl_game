@@ -3,8 +3,6 @@
 #define MAX_LINE_LENGTH 1024
 
 #define MAX_SOUND_CHANNELS 8
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
 
 #define ASPECT_RATIO ((float)WINDOW_WIDTH / (float)WINDOW_HEIGHT)
 
