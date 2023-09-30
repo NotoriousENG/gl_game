@@ -15,7 +15,7 @@ public:
   Tilemap(const char *path);
   ~Tilemap();
   void Draw(SpriteBatch *spriteBatch);
-  bool IsCollidingWith(SDL_Rect *other);
+  void IsCollidingWith(SDL_Rect *other, SDL_Rect &found);
 
 private:
   tmx::Map map;

@@ -77,14 +77,14 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
   }
 }
 
-bool Tilemap::IsCollidingWith(SDL_Rect *other) {
+void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
   // get the bounding SDL Rect for the tilemap
   const SDL_Rect tilemapRect = {
       0, 0, static_cast<int>(map.getTileSize().x * map.getTileCount().x),
       static_cast<int>(map.getTileSize().y * map.getTileCount().y)};
   // if the other rect is not colliding with the tilemap, return
   if (!SDL_HasIntersection(other, &tilemapRect)) {
-    return false;
+    return;
   }
 
   // get the possible tiles that could be colliding with the other rect
@@ -102,6 +102,8 @@ bool Tilemap::IsCollidingWith(SDL_Rect *other) {
     }
     // cast to a tile layer
     const auto tileLayer = layer->getLayerAs<tmx::TileLayer>();
+
+    SDL_Rect compositeRect = {0, 0, 0, 0};
 
     // loop over all the possible tiles in the layer (x and y)
     for (int x = startX; x <= endX; x++) {
@@ -138,12 +140,32 @@ bool Tilemap::IsCollidingWith(SDL_Rect *other) {
                                                     // tilesets
         const auto &tilesetTile = tileset.getTile(tile.ID);
 
+        if (!tilesetTile) {
+          continue;
+        }
+
         // if the tile class is "SOLID"
         if (tilesetTile->className == "SOLID") {
-          return true;
+          // if composite rect is 0,0,0,0
+          if (compositeRect.x == 0 && compositeRect.y == 0 &&
+              compositeRect.w == 0 && compositeRect.h == 0) {
+            // set composite rect to the tile rect
+            compositeRect = tileRect;
+          } else {
+            // otherwise, combine the tile rect with the composite rect
+            SDL_UnionRect(&compositeRect, &tileRect, &compositeRect);
+          }
         }
       }
     }
+    if (compositeRect.x != 0 || compositeRect.y != 0 || compositeRect.w != 0 ||
+        compositeRect.h != 0) {
+      found = compositeRect;
+      SDL_Log("other: %i, %i, %i, %i\n", other->x, other->y, other->w,
+              other->h);
+      SDL_Log("found: %i, %i, %i, %i\n", found.x, found.y, found.w, found.h);
+      return;
+    }
   }
-  return false;
+  return;
 }
