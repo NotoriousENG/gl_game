@@ -2,6 +2,23 @@
 <map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="13" height="10" tilewidth="64" tileheight="64" infinite="0" nextlayerid="4" nextobjectid="1">
  <tileset firstgid="1" name="tileset" tilewidth="64" tileheight="64" tilecount="42" columns="6">
   <image source="images/tilemap/tileset.png" width="384" height="448"/>
+  <tile id="4" type="SOLID"/>
+  <tile id="5" type="SOLID"/>
+  <tile id="8" type="SOLID"/>
+  <tile id="9" type="SOLID"/>
+  <tile id="25" type="SOLID"/>
+  <tile id="26" type="SOLID"/>
+  <tile id="27" type="SOLID"/>
+  <tile id="28" type="SOLID"/>
+  <tile id="29" type="SOLID"/>
+  <tile id="30" type="SOLID"/>
+  <tile id="31" type="SOLID"/>
+  <tile id="32" type="SOLID"/>
+  <tile id="33" type="SOLID"/>
+  <tile id="34" type="SOLID"/>
+  <tile id="35" type="SOLID"/>
+  <tile id="36" type="SOLID"/>
+  <tile id="37" type="SOLID"/>
  </tileset>
  <layer id="1" name="Tile Layer 1" width="13" height="10">
   <data encoding="base64" compression="zlib">

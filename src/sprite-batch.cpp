@@ -177,8 +177,7 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
   this->indices.push_back(vertexIndexOffset + 3);
 }
 
-void SpriteBatch::DrawRect(Texture *texture, glm::vec4 destRect,
-                           glm::vec4 color) {
+void SpriteBatch::DrawRect(glm::vec4 destRect, glm::vec4 color) {
 
   if (this->texture != nullptr) {
     this->Flush();

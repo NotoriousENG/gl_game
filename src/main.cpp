@@ -15,6 +15,7 @@
 #include "window.hpp"
 #include <SDL2/SDL_log.h>
 #include <memory>
+#include <set>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -79,8 +80,18 @@ int main(int argc, char *argv[]) {
           .set<Player>({"Player 1"})
           .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
 
+  auto Anya =
+      world.prefab("Anya")
+          .set<Transform2D>(
+              Transform2D(glm::vec2(300, 448), glm::vec2(1, 1), 0))
+          .set<Sprite>({texture_anya})
+          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
+
   // create tink
   auto player = world.entity("player").is_a(Tink);
+
+  // create anya
+  auto anya = world.entity("anya").is_a(Anya);
 
   world.set<Camera>({.position = glm::vec2(0, 0)});
 
@@ -98,33 +109,85 @@ int main(int argc, char *argv[]) {
       });
 
   // update sprite batcher uniforms from camera
-  world.system<Camera>().iter([](flecs::iter it, Camera *c) {
-    spriteBatcher->UpdateCamera(c->position);
-  });
+  world.system<Camera>().each(
+      [](Camera &c) { spriteBatcher->UpdateCamera(c.position); });
 
   // render sprites
-  world.system<Transform2D, Sprite>().iter(
-      [](flecs::iter it, Transform2D *t, Sprite *s) {
-        for (int i : it) {
-          spriteBatcher->Draw(s[i].texture.get(), t[i].position, t[i].scale,
-                              t[i].rotation);
+  world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
+    spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
+  });
+
+  auto collisionQuery = world.query<Transform2D, Collider>();
+  // Colision Between entities
+  world.system<Transform2D, Collider>().each([&collisionQuery](flecs::entity e1,
+                                                               Transform2D &t1,
+                                                               Collider &c1) {
+    collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
+                                        Collider &c2) {
+      if (e1.id() == e2.id()) {
+        return;
+      }
+      const SDL_Rect rect1 = {static_cast<int>(t1.position.x + c1.vertices.x),
+                              static_cast<int>(t1.position.y + c1.vertices.y),
+                              static_cast<int>(c1.vertices.z - c1.vertices.x),
+                              static_cast<int>(c1.vertices.w - c1.vertices.y)};
+      const SDL_Rect rect2 = {static_cast<int>(t2.position.x + c2.vertices.x),
+                              static_cast<int>(t2.position.y + c2.vertices.y),
+                              static_cast<int>(c2.vertices.z - c2.vertices.x),
+                              static_cast<int>(c2.vertices.w - c2.vertices.y)};
+      //// Log both rects
+      // SDL_Log("rect1: %i, %i, %i, %i\n", rect1.x, rect1.y, rect1.w, rect1.h);
+      // SDL_Log("rect2: %i, %i, %i, %i\n", rect2.x, rect2.y, rect2.w, rect2.h);
+
+      if (SDL_HasIntersection(&rect1, &rect2)) {
+        // Calculate the horizontal and vertical distances between the
+        // centers of the collider rectangles
+        const auto rect1Center =
+            glm::vec2(rect1.x + rect1.w / 2, rect1.y + rect1.h / 2);
+
+        const auto rect2Center =
+            glm::vec2(rect2.x + rect2.w / 2, rect2.y + rect2.h / 2);
+
+        const auto distanceX = rect1Center.x - rect2Center.x;
+        const auto distanceY = rect1Center.y - rect2Center.y;
+
+        // Figure out the combined half-widths and half-heights
+        const auto halfWidths = (rect1.w + rect2.w) / 2;
+        const auto halfHeights = (rect1.h + rect2.h) / 2;
+
+        // Calculate the overlap between the two rectangles
+        const auto overlapX = halfWidths - std::abs(distanceX);
+        const auto overlapY = halfHeights - std::abs(distanceY);
+
+        // The collision has happened on the axis of least penetration
+        const bool isMoreVertical = overlapX > overlapY;
+
+        if (isMoreVertical) {
+          if (distanceY < 0) {
+            t1.position.y = rect2.y - rect1.h - c1.vertices.y;
+          } else {
+            t1.position.y = rect2.y + rect2.h - c1.vertices.y;
+          }
+        } else {
+          if (distanceX < 0) {
+            t1.position.x = rect2.x - rect1.w - c1.vertices.x;
+          } else {
+            t1.position.x = rect2.x + rect2.w - c1.vertices.x;
+          }
         }
-      });
+      }
+    });
+  });
 
   // Draw colliders
-  world.system<Transform2D, Collider>().iter(
-      [](flecs::iter it, Transform2D *t, Collider *c) {
-        for (int i : it) {
-          // the rect is the vertices with the position offset
-          const auto rect =
-              c[i].vertices + glm::vec4(t[i].position.x, t[i].position.y,
-                                        -c[i].vertices.x, -c[i].vertices.y);
-          const auto color = c[i].type == ColliderType::SOLID
-                                 ? glm::vec4(0, 0, 1, 0.5f)
-                                 : glm::vec4(0, 1, 0, 0.5f);
-          spriteBatcher->DrawRect(nullptr, rect, color);
-        }
-      });
+  world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
+    // the rect is the vertices with the position offset
+    const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
+                                             -c.vertices.x, -c.vertices.y);
+    const auto color = c.type == ColliderType::SOLID ? glm::vec4(0, 0, 1, 0.5f)
+                                                     : glm::vec4(0, 1, 0, 0.5f);
+    spriteBatcher->DrawRect(rect, color);
+  });
 
   // Get connections
   std::unique_ptr<NetManager> net = std::make_unique<NetManager>(

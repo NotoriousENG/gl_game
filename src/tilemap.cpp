@@ -59,7 +59,91 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
         // draw the tile
         spriteBatch->Draw(texture.get(), position, glm::vec2(1, 1), 0,
                           glm::vec4(1, 1, 1, 1), srcRect);
+
+        // get the tile type
+        const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
+                                                    // tilesets
+        const auto &tilesetTile = tileset.getTile(tile.ID);
+
+        if (tilesetTile->className == "SOLID") {
+          // draw the collider as a red rect
+          spriteBatch->DrawRect(glm::vec4(position.x, position.y,
+                                          map.getTileSize().x,
+                                          map.getTileSize().y),
+                                glm::vec4(1, 0, 0, 0.5f));
+        }
       }
     }
   }
+}
+
+bool Tilemap::IsCollidingWith(SDL_Rect *other) {
+  // get the bounding SDL Rect for the tilemap
+  const SDL_Rect tilemapRect = {
+      0, 0, static_cast<int>(map.getTileSize().x * map.getTileCount().x),
+      static_cast<int>(map.getTileSize().y * map.getTileCount().y)};
+  // if the other rect is not colliding with the tilemap, return
+  if (!SDL_HasIntersection(other, &tilemapRect)) {
+    return false;
+  }
+
+  // get the possible tiles that could be colliding with the other rect
+  const int startX = other->x / map.getTileSize().x;
+  const int startY = other->y / map.getTileSize().y;
+  const int endX = (other->x + other->w) / map.getTileSize().x;
+  const int endY = (other->y + other->h) / map.getTileSize().y;
+
+  // loop over the map's layers
+  for (int i = 0; i < map.getLayers().size(); i++) {
+    const auto &layer = map.getLayers()[i];
+    // skip all layers that are not tile layers
+    if (layer->getType() != tmx::Layer::Type::Tile) {
+      continue;
+    }
+    // cast to a tile layer
+    const auto tileLayer = layer->getLayerAs<tmx::TileLayer>();
+
+    // loop over all the possible tiles in the layer (x and y)
+    for (int x = startX; x <= endX; x++) {
+      for (int y = startY; y <= endY; y++) {
+        // draw the tile
+        const auto tile = tileLayer.getTiles()[x + y * tileLayer.getSize().x];
+        if (tile.ID == 0) {
+          continue;
+        }
+
+        // get the position of the tile
+        const glm::vec2 position =
+            glm::vec2(x * map.getTileSize().x, y * map.getTileSize().y);
+
+        // get the xy index of the tile in the tileset
+        const int tilesetColumns =
+            textures[0]->GetTextureRect().z / map.getTileSize().x;
+        const int tileX = (tile.ID - 1) % tilesetColumns;
+        const int tileY = (tile.ID - 1) / tilesetColumns;
+
+        // get the bounding SDL Rect for the tile
+        const SDL_Rect tileRect = {static_cast<int>(position.x),
+                                   static_cast<int>(position.y),
+                                   static_cast<int>(map.getTileSize().x),
+                                   static_cast<int>(map.getTileSize().y)};
+
+        // if the other rect is not colliding with the tile, continue
+        if (!SDL_HasIntersection(other, &tileRect)) {
+          continue;
+        }
+
+        // get the tile type
+        const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
+                                                    // tilesets
+        const auto &tilesetTile = tileset.getTile(tile.ID);
+
+        // if the tile class is "SOLID"
+        if (tilesetTile->className == "SOLID") {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
