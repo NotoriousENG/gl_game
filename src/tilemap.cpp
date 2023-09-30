@@ -1,5 +1,6 @@
 #include "tilemap.hpp"
 #include "SDL2/SDL_log.h"
+#include "defs.hpp"
 #include "glad/glad.h"
 
 Tilemap::Tilemap(const char *path) {
@@ -60,17 +61,19 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
         spriteBatch->Draw(texture.get(), position, glm::vec2(1, 1), 0,
                           glm::vec4(1, 1, 1, 1), srcRect);
 
-        // get the tile type
-        const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
-                                                    // tilesets
-        const auto &tilesetTile = tileset.getTile(tile.ID);
+        if (DEBUG_COLLISIONS) {
+          // get the tile type
+          const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
+                                                      // tilesets
+          const auto &tilesetTile = tileset.getTile(tile.ID);
 
-        if (tilesetTile->className == "SOLID") {
-          // draw the collider as a red rect
-          spriteBatch->DrawRect(glm::vec4(position.x, position.y,
-                                          map.getTileSize().x,
-                                          map.getTileSize().y),
-                                glm::vec4(1, 0, 0, 0.5f));
+          if (tilesetTile->className == "SOLID") {
+            // draw the collider as a red rect
+            spriteBatch->DrawRect(glm::vec4(position.x, position.y,
+                                            map.getTileSize().x,
+                                            map.getTileSize().y),
+                                  glm::vec4(1, 0, 0, 0.5f));
+          }
         }
       }
     }
@@ -161,9 +164,9 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
     if (compositeRect.x != 0 || compositeRect.y != 0 || compositeRect.w != 0 ||
         compositeRect.h != 0) {
       found = compositeRect;
-      SDL_Log("other: %i, %i, %i, %i\n", other->x, other->y, other->w,
-              other->h);
-      SDL_Log("found: %i, %i, %i, %i\n", found.x, found.y, found.w, found.h);
+      // SDL_Log("other: %i, %i, %i, %i\n", other->x, other->y, other->w,
+      //         other->h);
+      // SDL_Log("found: %i, %i, %i, %i\n", found.x, found.y, found.w, found.h);
       return;
     }
   }

@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   auto Anya =
       world.prefab("Anya")
           .set<Transform2D>(
-              Transform2D(glm::vec2(300, 448), glm::vec2(1, 1), 0))
+              Transform2D(glm::vec2(300, 454), glm::vec2(1, 1), 0))
           .set<Sprite>({texture_anya})
           .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
 
@@ -207,15 +207,18 @@ int main(int argc, char *argv[]) {
     spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
   });
 
-  // Draw colliders
-  world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
-    // the rect is the vertices with the position offset
-    const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
-                                             -c.vertices.x, -c.vertices.y);
-    const auto color = c.type == ColliderType::SOLID ? glm::vec4(0, 0, 1, 0.5f)
-                                                     : glm::vec4(0, 1, 0, 0.5f);
-    spriteBatcher->DrawRect(rect, color);
-  });
+  if (DEBUG_COLLISIONS) {
+    // Draw colliders
+    world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
+      // the rect is the vertices with the position offset
+      const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
+                                               -c.vertices.x, -c.vertices.y);
+      const auto color = c.type == ColliderType::SOLID
+                             ? glm::vec4(0, 0, 1, 0.5f)
+                             : glm::vec4(0, 1, 0, 0.5f);
+      spriteBatcher->DrawRect(rect, color);
+    });
+  }
 
   // Get connections
   std::unique_ptr<NetManager> net = std::make_unique<NetManager>(
