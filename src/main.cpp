@@ -71,11 +71,13 @@ int main(int argc, char *argv[]) {
   int count = 0;
 
   // prefabs
-  auto Tink = world.prefab("Tink")
-                  .set<Transform2D>(
-                      Transform2D(glm::vec2(300, 300), glm::vec2(1, 1), 0))
-                  .set<Sprite>({texture_tink})
-                  .set<Player>({"Player 1"});
+  auto Tink =
+      world.prefab("Tink")
+          .set<Transform2D>(
+              Transform2D(glm::vec2(300, 300), glm::vec2(1, 1), 0))
+          .set<Sprite>({texture_tink})
+          .set<Player>({"Player 1"})
+          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
 
   // create tink
   auto player = world.entity("player").is_a(Tink);
@@ -106,6 +108,21 @@ int main(int argc, char *argv[]) {
         for (int i : it) {
           spriteBatcher->Draw(s[i].texture.get(), t[i].position, t[i].scale,
                               t[i].rotation);
+        }
+      });
+
+  // Draw colliders
+  world.system<Transform2D, Collider>().iter(
+      [](flecs::iter it, Transform2D *t, Collider *c) {
+        for (int i : it) {
+          // the rect is the vertices with the position offset
+          const auto rect =
+              c[i].vertices + glm::vec4(t[i].position.x, t[i].position.y,
+                                        -c[i].vertices.x, -c[i].vertices.y);
+          const auto color = c[i].type == ColliderType::SOLID
+                                 ? glm::vec4(0, 0, 1, 0.5f)
+                                 : glm::vec4(0, 1, 0, 0.5f);
+          spriteBatcher->DrawRect(nullptr, rect, color);
         }
       });
 

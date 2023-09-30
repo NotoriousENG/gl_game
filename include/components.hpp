@@ -42,3 +42,11 @@ struct Player {
 struct Camera {
   glm::vec2 position;
 };
+
+enum class ColliderType { TRIGGER, SOLID };
+
+struct Collider {
+  // collider vertices
+  glm::vec4 vertices;
+  ColliderType type;
+};
