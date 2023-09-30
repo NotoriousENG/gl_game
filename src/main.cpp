@@ -120,11 +120,11 @@ int main(int argc, char *argv[]) {
           .set<Sprite>({texture_anya})
           .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
 
-  // create tink
-  auto player = world.entity("player").is_a(Tink);
-
   // create anya
   auto anya = world.entity("anya").is_a(Anya);
+
+  // create tink
+  auto player = world.entity("player").is_a(Tink);
 
   world.set<Camera>({.position = glm::vec2(0, 0)});
 
@@ -139,10 +139,12 @@ int main(int argc, char *argv[]) {
       });
 
   auto collisionQuery = world.query<Transform2D, Collider>();
-  // Colision Between entities
-  world.system<Transform2D, Collider>().each([&collisionQuery](flecs::entity e1,
-                                                               Transform2D &t1,
-                                                               Collider &c1) {
+  // Colision Between player + entities
+  world.system<Transform2D, Collider, Player>().each([&collisionQuery](
+                                                         flecs::entity e1,
+                                                         Transform2D &t1,
+                                                         Collider &c1,
+                                                         Player &p1) {
     collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
                                         Collider &c2) {
       if (e1.id() == e2.id()) {
@@ -157,8 +159,9 @@ int main(int argc, char *argv[]) {
                               static_cast<int>(c2.vertices.z - c2.vertices.x),
                               static_cast<int>(c2.vertices.w - c2.vertices.y)};
       //// Log both rects
-      // SDL_Log("rect1: %i, %i, %i, %i\n", rect1.x, rect1.y, rect1.w, rect1.h);
-      // SDL_Log("rect2: %i, %i, %i, %i\n", rect2.x, rect2.y, rect2.w, rect2.h);
+      // SDL_Log("rect1: %i, %i, %i, %i\n", rect1.x, rect1.y, rect1.w,
+      // rect1.h); SDL_Log("rect2: %i, %i, %i, %i\n", rect2.x, rect2.y,
+      // rect2.w, rect2.h);
 
       if (SDL_HasIntersection(&rect1, &rect2)) {
         // Calculate the horizontal and vertical distances between the
