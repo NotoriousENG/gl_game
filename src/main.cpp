@@ -15,7 +15,6 @@
 #include "window.hpp"
 #include <SDL2/SDL_log.h>
 #include <memory>
-#include <set>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -25,20 +24,19 @@ static flecs::world world;
 
 static std::unique_ptr<Tilemap> tilemap;
 
-void move_rect(const SDL_Rect &rect1, const SDL_Rect &rect2, Transform2D &t1,
-               Collider &c1) {
-  const auto rect1Center =
-      glm::vec2(rect1.x + rect1.w / 2, rect1.y + rect1.h / 2);
+void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
+                         Transform2D &t1, Collider &c1) {
+  const auto rect1Center = glm::vec2(rect.x + rect.w / 2, rect.y + rect.h / 2);
 
   const auto rect2Center =
-      glm::vec2(rect2.x + rect2.w / 2, rect2.y + rect2.h / 2);
+      glm::vec2(pushedBy.x + pushedBy.w / 2, pushedBy.y + pushedBy.h / 2);
 
   const auto distanceX = rect1Center.x - rect2Center.x;
   const auto distanceY = rect1Center.y - rect2Center.y;
 
   // Figure out the combined half-widths and half-heights
-  const auto halfWidths = (rect1.w + rect2.w) / 2;
-  const auto halfHeights = (rect1.h + rect2.h) / 2;
+  const auto halfWidths = (rect.w + pushedBy.w) / 2;
+  const auto halfHeights = (rect.h + pushedBy.h) / 2;
 
   // Calculate the overlap between the two rectangles
   const auto overlapX = halfWidths - std::abs(distanceX);
@@ -49,15 +47,15 @@ void move_rect(const SDL_Rect &rect1, const SDL_Rect &rect2, Transform2D &t1,
 
   if (isMoreVertical) {
     if (distanceY < 0) {
-      t1.position.y = rect2.y - rect1.h - c1.vertices.y;
+      t1.position.y = pushedBy.y - rect.h - c1.vertices.y;
     } else {
-      t1.position.y = rect2.y + rect2.h - c1.vertices.y;
+      t1.position.y = pushedBy.y + pushedBy.h - c1.vertices.y;
     }
   } else {
     if (distanceX < 0) {
-      t1.position.x = rect2.x - rect1.w - c1.vertices.x;
+      t1.position.x = pushedBy.x - rect.w - c1.vertices.x;
     } else {
-      t1.position.x = rect2.x + rect2.w - c1.vertices.x;
+      t1.position.x = pushedBy.x + pushedBy.w - c1.vertices.x;
     }
   }
 }
@@ -102,10 +100,8 @@ int main(int argc, char *argv[]) {
 
   tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
-  int count = 0;
-
   // prefabs
-  auto Tink =
+  const auto Tink =
       world.prefab("Tink")
           .set<Transform2D>(
               Transform2D(glm::vec2(300, 400), glm::vec2(1, 1), 0))
@@ -113,7 +109,7 @@ int main(int argc, char *argv[]) {
           .set<Player>({"Player 1"})
           .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
 
-  auto Anya =
+  const auto Anya =
       world.prefab("Anya")
           .set<Transform2D>(
               Transform2D(glm::vec2(300, 454), glm::vec2(1, 1), 0))
@@ -121,10 +117,10 @@ int main(int argc, char *argv[]) {
           .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
 
   // create anya
-  auto anya = world.entity("anya").is_a(Anya);
+  const auto anya = world.entity("anya").is_a(Anya);
 
   // create tink
-  auto player = world.entity("player").is_a(Tink);
+  const auto player = world.entity("player").is_a(Tink);
 
   world.set<Camera>({.position = glm::vec2(0, 0)});
 
@@ -138,7 +134,7 @@ int main(int argc, char *argv[]) {
         }
       });
 
-  auto collisionQuery = world.query<Transform2D, Collider>();
+  const auto collisionQuery = world.query<Transform2D, Collider>();
   // Colision Between player + entities
   world.system<Transform2D, Collider, Player>().each([&collisionQuery](
                                                          flecs::entity e1,
@@ -166,7 +162,7 @@ int main(int argc, char *argv[]) {
       if (SDL_HasIntersection(&rect1, &rect2)) {
         // Calculate the horizontal and vertical distances between the
         // centers of the collider rectangles
-        move_rect(rect1, rect2, t1, c1);
+        push_rect_transform(rect1, rect2, t1, c1);
       }
     });
   });
@@ -181,13 +177,13 @@ int main(int argc, char *argv[]) {
     tilemap->IsCollidingWith(&rect, found);
     if (found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0) {
       // draw the collider as a red rect
-      move_rect(rect, found, t, c);
+      push_rect_transform(rect, found, t, c);
     }
   });
 
   // any rendering should happen after logic
 
-  auto playerQuery = world.query<Sprite, Transform2D, Player>();
+  const auto playerQuery = world.query<Sprite, Transform2D, Player>();
 
   // update sprite batcher uniforms from camera
   world.system<Camera>().each([playerQuery](Camera &c) {
