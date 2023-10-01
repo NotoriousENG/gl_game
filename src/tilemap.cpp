@@ -117,15 +117,18 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
           continue;
         }
 
+        // get the tile type
+        const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
+                                                    // tilesets
+        const auto &tilesetTile = tileset.getTile(tile.ID);
+
+        if (!tilesetTile || tilesetTile->className != "SOLID") {
+          continue;
+        }
+
         // get the position of the tile
         const glm::vec2 position =
             glm::vec2(x * map.getTileSize().x, y * map.getTileSize().y);
-
-        // get the xy index of the tile in the tileset
-        const int tilesetColumns =
-            textures[0]->GetTextureRect().z / map.getTileSize().x;
-        const int tileX = (tile.ID - 1) % tilesetColumns;
-        const int tileY = (tile.ID - 1) / tilesetColumns;
 
         // get the bounding SDL Rect for the tile
         const SDL_Rect tileRect = {static_cast<int>(position.x),
@@ -133,22 +136,7 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
                                    static_cast<int>(map.getTileSize().x),
                                    static_cast<int>(map.getTileSize().y)};
 
-        // if the other rect is not colliding with the tile, continue
-        if (!SDL_HasIntersection(other, &tileRect)) {
-          continue;
-        }
-
-        // get the tile type
-        const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
-                                                    // tilesets
-        const auto &tilesetTile = tileset.getTile(tile.ID);
-
-        if (!tilesetTile) {
-          continue;
-        }
-
-        // if the tile class is "SOLID"
-        if (tilesetTile->className == "SOLID") {
+        if (SDL_HasIntersection(other, &tileRect)) {
           // if composite rect is 0,0,0,0
           if (compositeRect.x == 0 && compositeRect.y == 0 &&
               compositeRect.w == 0 && compositeRect.h == 0) {
@@ -171,4 +159,9 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
     }
   }
   return;
+}
+
+SDL_Rect Tilemap::GetBounds() {
+  return {0, 0, static_cast<int>(map.getTileSize().x * map.getTileCount().x),
+          static_cast<int>(map.getTileSize().y * map.getTileCount().y)};
 }

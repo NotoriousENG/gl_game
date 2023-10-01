@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   const auto Anya =
       world.prefab("Anya")
           .set<Transform2D>(
-              Transform2D(glm::vec2(300, 454), glm::vec2(1, 1), 0))
+              Transform2D(glm::vec2(150, 454), glm::vec2(1, 1), 0))
           .set<Sprite>({texture_anya})
           .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
 
@@ -169,6 +169,19 @@ int main(int argc, char *argv[]) {
 
   // collision for entities with tilemap
   world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
+    const auto tilemapBounds = tilemap->GetBounds();
+    // clamp x position to tilemap bounds
+    t.position.x =
+        glm::clamp(static_cast<int>(t.position.x),
+                   static_cast<int>(tilemapBounds.x - c.vertices.x),
+                   static_cast<int>(tilemap->GetBounds().w - c.vertices.z));
+    // since we want to be able to fall off the map don't worry about y
+    // t.position.y =
+    //     glm::clamp(static_cast<int>(t.position.y),
+    //                static_cast<int>(tilemapBounds.y - c.vertices.y),
+    //                static_cast<int>(tilemap->GetBounds().h - c.vertices.w));
+
+    // collide with tiles
     SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
                      static_cast<int>(t.position.y + c.vertices.y),
                      static_cast<int>(c.vertices.z - c.vertices.x),
@@ -192,7 +205,7 @@ int main(int argc, char *argv[]) {
       glm::vec2 offset = glm::vec2(rect.z, rect.w) / 2.0f;
       c.position = t.position + offset;
     });
-    spriteBatcher->UpdateCamera(c.position);
+    spriteBatcher->UpdateCamera(c.position, tilemap->GetBounds());
 
     // silly but the tilemap needs to be drawn after the camera is updated
     // and before everything else to avoid jitter

@@ -16,6 +16,7 @@ public:
   ~Tilemap();
   void Draw(SpriteBatch *spriteBatch);
   void IsCollidingWith(SDL_Rect *other, SDL_Rect &found);
+  SDL_Rect GetBounds();
 
 private:
   tmx::Map map;

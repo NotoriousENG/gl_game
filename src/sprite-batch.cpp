@@ -85,12 +85,25 @@ SpriteBatch::~SpriteBatch() {
   glDeleteProgram(this->shaderProgram);
 }
 
-void SpriteBatch::UpdateCamera(glm::vec2 position) {
+void SpriteBatch::UpdateCamera(glm::vec2 focalPoint, SDL_Rect tilemapBounds) {
+  // clamp the focal point to the tilemap bounds
+  focalPoint.x =
+      glm::clamp(static_cast<int>(focalPoint.x),
+                 static_cast<int>(tilemapBounds.x + this->windowSize.x / 2.0f),
+                 static_cast<int>(tilemapBounds.x + tilemapBounds.w -
+                                  this->windowSize.x / 2.0f));
+  focalPoint.y =
+      glm::clamp(static_cast<int>(focalPoint.y),
+                 static_cast<int>(tilemapBounds.y + this->windowSize.y / 2.0f),
+                 static_cast<int>(tilemapBounds.y + tilemapBounds.h -
+                                  this->windowSize.y / 2.0f));
+
+  // update the camera position
+  this->cameraPosition = focalPoint;
   // update the view, so that the target is always in the center of the screen
-  this->cameraPosition = position;
   this->view = glm::translate(
-      glm::mat4(1.0f), glm::vec3(-position.x + this->windowSize.x / 2,
-                                 -position.y + this->windowSize.y / 2, 0.0f));
+      glm::mat4(1.0f), glm::vec3(-focalPoint.x + this->windowSize.x / 2,
+                                 -focalPoint.y + this->windowSize.y / 2, 0.0f));
 }
 
 void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,

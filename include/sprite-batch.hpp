@@ -21,7 +21,7 @@ public:
   SpriteBatch(glm::vec2 windowSize);
   ~SpriteBatch();
 
-  void UpdateCamera(glm::vec2 position);
+  void UpdateCamera(glm::vec2 focalPoint, SDL_Rect tilemapBounds);
 
   void Draw(Texture *texture, glm::vec2 position,
             glm::vec2 scale = glm::vec2(1, 1), float rotation = 0.0f,
