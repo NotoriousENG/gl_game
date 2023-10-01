@@ -15,7 +15,8 @@ public:
   Tilemap(const char *path);
   ~Tilemap();
   void Draw(SpriteBatch *spriteBatch);
-  void IsCollidingWith(SDL_Rect *other, SDL_Rect &found);
+  void IsCollidingWith(SDL_Rect *other, SDL_Rect &found, bool &isOverlapping,
+                       bool &isGrounded);
   SDL_Rect GetBounds();
 
 private:

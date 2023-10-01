@@ -15,6 +15,7 @@
 #include "window.hpp"
 #include <SDL2/SDL_log.h>
 #include <memory>
+#include <set>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -23,6 +24,8 @@ static std::unique_ptr<SpriteBatch> spriteBatcher;
 static flecs::world world;
 
 static std::unique_ptr<Tilemap> tilemap;
+
+static std::set<flecs::entity> entitiesCollidingWithMap;
 
 void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
                          Transform2D &t1, Collider &c1) {
@@ -101,20 +104,20 @@ int main(int argc, char *argv[]) {
   tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   // prefabs
-  const auto Tink =
-      world.prefab("Tink")
-          .set<Transform2D>(
-              Transform2D(glm::vec2(300, 400), glm::vec2(1, 1), 0))
-          .set<Sprite>({texture_tink})
-          .set<Player>({"Player 1"})
-          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
+  const auto Tink = world.prefab("Tink")
+                        .set<Transform2D>(Transform2D(glm::vec2(300, 400),
+                                                      glm::vec2(1, 1), 0))
+                        .set<Sprite>({texture_tink})
+                        .set<Player>({"Player 1"})
+                        .set<Collider>({glm::vec4(17, 7, 46, 57),
+                                        ColliderType::SOLID, false});
 
-  const auto Anya =
-      world.prefab("Anya")
-          .set<Transform2D>(
-              Transform2D(glm::vec2(150, 454), glm::vec2(1, 1), 0))
-          .set<Sprite>({texture_anya})
-          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
+  const auto Anya = world.prefab("Anya")
+                        .set<Transform2D>(Transform2D(glm::vec2(150, 454),
+                                                      glm::vec2(1, 1), 0))
+                        .set<Sprite>({texture_anya})
+                        .set<Collider>({glm::vec4(17, 7, 46, 57),
+                                        ColliderType::SOLID, false});
 
   // create anya
   const auto anya = world.entity("anya").is_a(Anya);
@@ -125,12 +128,19 @@ int main(int argc, char *argv[]) {
   world.set<Camera>({.position = glm::vec2(0, 0)});
 
   // player movement + update camera
-  world.system<Player, Transform2D, Sprite>().iter(
-      [](flecs::iter it, Player *p, Transform2D *t, Sprite *s) {
+  world.system<Player, Transform2D, Sprite, Collider>().iter(
+      [](flecs::iter it, Player *p, Transform2D *t, Sprite *s, Collider *c) {
         const float speed = 200.0f;
         const glm::vec2 input = InputManager::GetVectorMovement();
         for (int i : it) {
-          t[i].position += input * speed * it.delta_time();
+          t[i].position.x += input.x * speed * it.delta_time();
+          if (!c[i].isGrounded) {
+            t[i].position.y += 200.0f * it.delta_time();
+          } else {
+            if (input.y < 0) {
+              t[i].position.y = 300.0f;
+            }
+          }
         }
       });
 
@@ -168,31 +178,40 @@ int main(int argc, char *argv[]) {
   });
 
   // collision for entities with tilemap
-  world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
-    const auto tilemapBounds = tilemap->GetBounds();
-    // clamp x position to tilemap bounds
-    t.position.x =
-        glm::clamp(static_cast<int>(t.position.x),
-                   static_cast<int>(tilemapBounds.x - c.vertices.x),
-                   static_cast<int>(tilemap->GetBounds().w - c.vertices.z));
-    // since we want to be able to fall off the map don't worry about y
-    // t.position.y =
-    //     glm::clamp(static_cast<int>(t.position.y),
-    //                static_cast<int>(tilemapBounds.y - c.vertices.y),
-    //                static_cast<int>(tilemap->GetBounds().h - c.vertices.w));
+  world.system<Transform2D, Collider>().each(
+      [](flecs::entity e, Transform2D &t, Collider &c) {
+        const auto tilemapBounds = tilemap->GetBounds();
+        // clamp x position to tilemap bounds
+        t.position.x =
+            glm::clamp(static_cast<int>(t.position.x),
+                       static_cast<int>(tilemapBounds.x - c.vertices.x),
+                       static_cast<int>(tilemap->GetBounds().w - c.vertices.z));
+        // since we want to be able to fall off the map don't worry about y
+        // t.position.y =
+        //     glm::clamp(static_cast<int>(t.position.y),
+        //                static_cast<int>(tilemapBounds.y - c.vertices.y),
+        //                static_cast<int>(tilemap->GetBounds().h -
+        //                c.vertices.w));
 
-    // collide with tiles
-    SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
-                     static_cast<int>(t.position.y + c.vertices.y),
-                     static_cast<int>(c.vertices.z - c.vertices.x),
-                     static_cast<int>(c.vertices.w - c.vertices.y)};
-    SDL_Rect found = {0, 0, 0, 0};
-    tilemap->IsCollidingWith(&rect, found);
-    if (found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0) {
-      // draw the collider as a red rect
-      push_rect_transform(rect, found, t, c);
-    }
-  });
+        // collide with tiles
+        SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
+                         static_cast<int>(t.position.y + c.vertices.y),
+                         static_cast<int>(c.vertices.z - c.vertices.x),
+                         static_cast<int>(c.vertices.w - c.vertices.y)};
+        SDL_Rect found = {0, 0, 0, 0};
+        bool isOverlapping = false;
+        tilemap->IsCollidingWith(&rect, found, isOverlapping,
+                                 c.isGrounded); // check for collision
+
+        if ((found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0)) {
+          push_rect_transform(rect, found, t, c);
+        }
+        if (isOverlapping) {
+          entitiesCollidingWithMap.insert(e);
+        } else {
+          entitiesCollidingWithMap.erase(e);
+        }
+      });
 
   // any rendering should happen after logic
 
@@ -221,13 +240,16 @@ int main(int argc, char *argv[]) {
 
   if (DEBUG_COLLISIONS) {
     // Draw colliders
-    world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
+    world.system<Transform2D, Collider>().each([](flecs::entity e,
+                                                  Transform2D &t, Collider &c) {
       // the rect is the vertices with the position offset
       const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
                                                -c.vertices.x, -c.vertices.y);
-      const auto color = c.type == ColliderType::SOLID
-                             ? glm::vec4(0, 0, 1, 0.5f)
-                             : glm::vec4(0, 1, 0, 0.5f);
+      const auto color =
+          entitiesCollidingWithMap.find(e) == entitiesCollidingWithMap.end()
+              ? glm::vec4(0, 0, 1, 0.5f)
+          : c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
+                         : glm::vec4(0, 1, 0, 0.5f);
       spriteBatcher->DrawRect(rect, color);
     });
   }

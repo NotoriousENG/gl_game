@@ -80,7 +80,11 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
   }
 }
 
-void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
+void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
+                              bool &isOverlapping, bool &isGrounded) {
+  isOverlapping = false;
+  isGrounded = false;
+
   // get the bounding SDL Rect for the tilemap
   const SDL_Rect tilemapRect = {
       0, 0, static_cast<int>(map.getTileSize().x * map.getTileCount().x),
@@ -91,10 +95,10 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
   }
 
   // get the possible tiles that could be colliding with the other rect
-  const int startX = other->x / map.getTileSize().x;
-  const int startY = other->y / map.getTileSize().y;
-  const int endX = (other->x + other->w) / map.getTileSize().x;
-  const int endY = (other->y + other->h) / map.getTileSize().y;
+  const int startX = (other->x - 1) / map.getTileSize().x;
+  const int startY = (other->y - 1) / map.getTileSize().y;
+  const int endX = (other->x + other->w + 1) / map.getTileSize().x;
+  const int endY = (other->y + other->h + 1) / map.getTileSize().y;
 
   // loop over the map's layers
   for (int i = 0; i < map.getLayers().size(); i++) {
@@ -137,6 +141,7 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
                                    static_cast<int>(map.getTileSize().y)};
 
         if (SDL_HasIntersection(other, &tileRect)) {
+          isOverlapping = true;
           // if composite rect is 0,0,0,0
           if (compositeRect.x == 0 && compositeRect.y == 0 &&
               compositeRect.w == 0 && compositeRect.h == 0) {
@@ -145,6 +150,26 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found) {
           } else {
             // otherwise, combine the tile rect with the composite rect
             SDL_UnionRect(&compositeRect, &tileRect, &compositeRect);
+          }
+        }
+
+        if (!isOverlapping) {
+          // check for an overlap (the other rect is inside a the tile plus some
+          // padding)
+          const SDL_Rect paddedTileRect = {tileRect.x - 1, tileRect.y - 2,
+                                           tileRect.w + 2, tileRect.h + 3};
+          if (SDL_HasIntersection(other, &paddedTileRect)) {
+            isOverlapping = true;
+          }
+        }
+
+        if (!isGrounded) {
+          // check for an overlap for only a padded on the top tile rect
+          const SDL_Rect aboveTileRect = {tileRect.x + 3, tileRect.y - 1,
+                                          tileRect.w - 7, 1};
+
+          if (SDL_HasIntersection(other, &aboveTileRect)) {
+            isGrounded = true;
           }
         }
       }
