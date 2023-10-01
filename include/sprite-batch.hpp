@@ -27,6 +27,8 @@ public:
             glm::vec2 scale = glm::vec2(1, 1), float rotation = 0.0f,
             glm::vec4 color = glm::vec4(1, 1, 1, 1),
             glm::vec4 srcRect = glm::vec4(0, 0, 0, 0));
+
+  void DrawRect(glm::vec4 destRect, glm::vec4 color = glm::vec4(1, 1, 1, 1));
   void Flush();
 
   void SetProjection(glm::vec2 windowSize);

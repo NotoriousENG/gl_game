@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef DEBUG_COLLISIONS
+#define DEBUG_COLLISIONS 0 // Configure in CMakeLists.txt
+#endif
+
 #define MAX_LINE_LENGTH 1024
 
 #define MAX_SOUND_CHANNELS 8

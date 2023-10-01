@@ -177,6 +177,41 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
   this->indices.push_back(vertexIndexOffset + 3);
 }
 
+void SpriteBatch::DrawRect(glm::vec4 destRect, glm::vec4 color) {
+
+  if (this->texture != nullptr) {
+    this->Flush();
+    this->texture = nullptr;
+  }
+
+  const int vertexIndexOffset = this->vertices.size();
+
+  const auto topLeft = glm::vec2(destRect.x, destRect.y);
+  const auto topRight = glm::vec2(destRect.x + destRect.z, destRect.y);
+  const auto bottomLeft = glm::vec2(destRect.x, destRect.y + destRect.w);
+  const auto bottomRight =
+      glm::vec2(destRect.x + destRect.z, destRect.y + destRect.w);
+
+  const auto uvTopLeft = glm::vec2(0, 0);
+  const auto uvTopRight = glm::vec2(1, 0);
+  const auto uvBottomLeft = glm::vec2(0, 1);
+  const auto uvBottomRight = glm::vec2(1, 1);
+
+  this->vertices.push_back(Vertex(topLeft, uvTopLeft, color));
+  this->vertices.push_back(Vertex(topRight, uvTopRight, color));
+  this->vertices.push_back(Vertex(bottomLeft, uvBottomLeft, color));
+  this->vertices.push_back(Vertex(bottomRight, uvBottomRight, color));
+
+  // Add indices for the two triangles forming the quad for the current sprite
+  // Add indices offset by vertexIndexOffset
+  this->indices.push_back(vertexIndexOffset + 0);
+  this->indices.push_back(vertexIndexOffset + 1);
+  this->indices.push_back(vertexIndexOffset + 2);
+  this->indices.push_back(vertexIndexOffset + 2);
+  this->indices.push_back(vertexIndexOffset + 1);
+  this->indices.push_back(vertexIndexOffset + 3);
+}
+
 void SpriteBatch::Flush() {
   if (this->vertices.size() == 0) {
     return;

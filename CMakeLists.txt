@@ -5,6 +5,9 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("GlGame")
 
+set(GAME_NAME "GlGame" CACHE STRING "Name of the game")
+option(ENABLE_DEBUG_COLLISIONS "Enable DEBUG_COLLISIONS" OFF)
+
 # C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -86,8 +89,12 @@ if (NOT CMAKE_BUILD_TYPE MATCHES Release) # append AND false to disable in debug
     target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG=1)
 endif()
 
-# define GAME_NAME as Matt's World
-target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_NAME="GlGame")
+
+if(ENABLE_DEBUG_COLLISIONS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_COLLISIONS=1)
+endif()
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_NAME="${GAME_NAME}")
 
 # project includes
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/include")

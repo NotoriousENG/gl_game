@@ -24,6 +24,42 @@ static flecs::world world;
 
 static std::unique_ptr<Tilemap> tilemap;
 
+void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
+                         Transform2D &t1, Collider &c1) {
+  const auto rect1Center = glm::vec2(rect.x + rect.w / 2, rect.y + rect.h / 2);
+
+  const auto rect2Center =
+      glm::vec2(pushedBy.x + pushedBy.w / 2, pushedBy.y + pushedBy.h / 2);
+
+  const auto distanceX = rect1Center.x - rect2Center.x;
+  const auto distanceY = rect1Center.y - rect2Center.y;
+
+  // Figure out the combined half-widths and half-heights
+  const auto halfWidths = (rect.w + pushedBy.w) / 2;
+  const auto halfHeights = (rect.h + pushedBy.h) / 2;
+
+  // Calculate the overlap between the two rectangles
+  const auto overlapX = halfWidths - std::abs(distanceX);
+  const auto overlapY = halfHeights - std::abs(distanceY);
+
+  // The collision has happened on the axis of least penetration
+  const bool isMoreVertical = overlapX > overlapY;
+
+  if (isMoreVertical) {
+    if (distanceY < 0) {
+      t1.position.y = pushedBy.y - rect.h - c1.vertices.y;
+    } else {
+      t1.position.y = pushedBy.y + pushedBy.h - c1.vertices.y;
+    }
+  } else {
+    if (distanceX < 0) {
+      t1.position.x = pushedBy.x - rect.w - c1.vertices.x;
+    } else {
+      t1.position.x = pushedBy.x + pushedBy.w - c1.vertices.x;
+    }
+  }
+}
+
 void main_loop() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
@@ -37,10 +73,6 @@ void main_loop() {
 
   // Clear the screen
   renderer->Clear();
-
-  tilemap->Draw(spriteBatcher.get()); // draw the tilemap
-  // draw all sprites in the batch
-  spriteBatcher->Flush();
 
   // run systems
   world.progress();
@@ -68,17 +100,27 @@ int main(int argc, char *argv[]) {
 
   tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
-  int count = 0;
-
   // prefabs
-  auto Tink = world.prefab("Tink")
-                  .set<Transform2D>(
-                      Transform2D(glm::vec2(300, 300), glm::vec2(1, 1), 0))
-                  .set<Sprite>({texture_tink})
-                  .set<Player>({"Player 1"});
+  const auto Tink =
+      world.prefab("Tink")
+          .set<Transform2D>(
+              Transform2D(glm::vec2(300, 400), glm::vec2(1, 1), 0))
+          .set<Sprite>({texture_tink})
+          .set<Player>({"Player 1"})
+          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
+
+  const auto Anya =
+      world.prefab("Anya")
+          .set<Transform2D>(
+              Transform2D(glm::vec2(300, 454), glm::vec2(1, 1), 0))
+          .set<Sprite>({texture_anya})
+          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
+
+  // create anya
+  const auto anya = world.entity("anya").is_a(Anya);
 
   // create tink
-  auto player = world.entity("player").is_a(Tink);
+  const auto player = world.entity("player").is_a(Tink);
 
   world.set<Camera>({.position = glm::vec2(0, 0)});
 
@@ -90,24 +132,92 @@ int main(int argc, char *argv[]) {
         for (int i : it) {
           t[i].position += input * speed * it.delta_time();
         }
-        const auto rect = s[0].texture->GetTextureRect();
-        glm::vec2 offset = glm::vec2(rect.z, rect.w) / 2.0f;
-        world.get_mut<Camera>()->position = t[0].position + offset;
       });
 
+  const auto collisionQuery = world.query<Transform2D, Collider>();
+  // Colision Between player + entities
+  world.system<Transform2D, Collider, Player>().each([&collisionQuery](
+                                                         flecs::entity e1,
+                                                         Transform2D &t1,
+                                                         Collider &c1,
+                                                         Player &p1) {
+    collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
+                                        Collider &c2) {
+      if (e1.id() == e2.id()) {
+        return;
+      }
+      const SDL_Rect rect1 = {static_cast<int>(t1.position.x + c1.vertices.x),
+                              static_cast<int>(t1.position.y + c1.vertices.y),
+                              static_cast<int>(c1.vertices.z - c1.vertices.x),
+                              static_cast<int>(c1.vertices.w - c1.vertices.y)};
+      const SDL_Rect rect2 = {static_cast<int>(t2.position.x + c2.vertices.x),
+                              static_cast<int>(t2.position.y + c2.vertices.y),
+                              static_cast<int>(c2.vertices.z - c2.vertices.x),
+                              static_cast<int>(c2.vertices.w - c2.vertices.y)};
+      //// Log both rects
+      // SDL_Log("rect1: %i, %i, %i, %i\n", rect1.x, rect1.y, rect1.w,
+      // rect1.h); SDL_Log("rect2: %i, %i, %i, %i\n", rect2.x, rect2.y,
+      // rect2.w, rect2.h);
+
+      if (SDL_HasIntersection(&rect1, &rect2)) {
+        // Calculate the horizontal and vertical distances between the
+        // centers of the collider rectangles
+        push_rect_transform(rect1, rect2, t1, c1);
+      }
+    });
+  });
+
+  // collision for entities with tilemap
+  world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
+    SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
+                     static_cast<int>(t.position.y + c.vertices.y),
+                     static_cast<int>(c.vertices.z - c.vertices.x),
+                     static_cast<int>(c.vertices.w - c.vertices.y)};
+    SDL_Rect found = {0, 0, 0, 0};
+    tilemap->IsCollidingWith(&rect, found);
+    if (found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0) {
+      // draw the collider as a red rect
+      push_rect_transform(rect, found, t, c);
+    }
+  });
+
+  // any rendering should happen after logic
+
+  const auto playerQuery = world.query<Sprite, Transform2D, Player>();
+
   // update sprite batcher uniforms from camera
-  world.system<Camera>().iter([](flecs::iter it, Camera *c) {
-    spriteBatcher->UpdateCamera(c->position);
+  world.system<Camera>().each([playerQuery](Camera &c) {
+    playerQuery.each([&c](Sprite &s, Transform2D &t, Player &p) {
+      const auto rect = s.texture->GetTextureRect();
+      glm::vec2 offset = glm::vec2(rect.z, rect.w) / 2.0f;
+      c.position = t.position + offset;
+    });
+    spriteBatcher->UpdateCamera(c.position);
+
+    // silly but the tilemap needs to be drawn after the camera is updated
+    // and before everything else to avoid jitter
+    tilemap->Draw(spriteBatcher.get()); // draw the tilemap
+    // draw all sprites in the batch
+    spriteBatcher->Flush();
   });
 
   // render sprites
-  world.system<Transform2D, Sprite>().iter(
-      [](flecs::iter it, Transform2D *t, Sprite *s) {
-        for (int i : it) {
-          spriteBatcher->Draw(s[i].texture.get(), t[i].position, t[i].scale,
-                              t[i].rotation);
-        }
-      });
+  world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
+    spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
+  });
+
+  if (DEBUG_COLLISIONS) {
+    // Draw colliders
+    world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
+      // the rect is the vertices with the position offset
+      const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
+                                               -c.vertices.x, -c.vertices.y);
+      const auto color = c.type == ColliderType::SOLID
+                             ? glm::vec4(0, 0, 1, 0.5f)
+                             : glm::vec4(0, 1, 0, 0.5f);
+      spriteBatcher->DrawRect(rect, color);
+    });
+  }
 
   // Get connections
   std::unique_ptr<NetManager> net = std::make_unique<NetManager>(
