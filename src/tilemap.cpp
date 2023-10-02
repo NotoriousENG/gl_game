@@ -81,8 +81,9 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
 }
 
 void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
-                              bool &isOverlapping, bool &isGrounded) {
-  isOverlapping = false;
+                              flecs::entity entity, bool &isGrounded) {
+
+  entitiesCollidingWithMap.erase(entity);
   isGrounded = false;
 
   // get the bounding SDL Rect for the tilemap
@@ -141,7 +142,6 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
                                    static_cast<int>(map.getTileSize().y)};
 
         if (SDL_HasIntersection(other, &tileRect)) {
-          isOverlapping = true;
           // if composite rect is 0,0,0,0
           if (compositeRect.x == 0 && compositeRect.y == 0 &&
               compositeRect.w == 0 && compositeRect.h == 0) {
@@ -153,13 +153,13 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
           }
         }
 
-        if (!isOverlapping) {
+        if (!HasCollision(entity)) {
           // check for an overlap (the other rect is inside a the tile plus some
           // padding)
           const SDL_Rect paddedTileRect = {tileRect.x - 1, tileRect.y - 2,
                                            tileRect.w + 2, tileRect.h + 3};
           if (SDL_HasIntersection(other, &paddedTileRect)) {
-            isOverlapping = true;
+            entitiesCollidingWithMap.insert(entity);
           }
         }
 
@@ -169,6 +169,7 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
                                           tileRect.w - 7, 1};
 
           if (SDL_HasIntersection(other, &aboveTileRect)) {
+            entitiesCollidingWithMap.insert(entity);
             isGrounded = true;
           }
         }
@@ -177,16 +178,21 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
     if (compositeRect.x != 0 || compositeRect.y != 0 || compositeRect.w != 0 ||
         compositeRect.h != 0) {
       found = compositeRect;
+      entitiesCollidingWithMap.insert(entity);
       // SDL_Log("other: %i, %i, %i, %i\n", other->x, other->y, other->w,
       //         other->h);
       // SDL_Log("found: %i, %i, %i, %i\n", found.x, found.y, found.w, found.h);
       return;
     }
   }
-  return;
 }
 
 SDL_Rect Tilemap::GetBounds() {
   return {0, 0, static_cast<int>(map.getTileSize().x * map.getTileCount().x),
           static_cast<int>(map.getTileSize().y * map.getTileCount().y)};
+}
+
+bool Tilemap::HasCollision(flecs::entity entity) {
+  return entitiesCollidingWithMap.find(entity) !=
+         entitiesCollidingWithMap.end();
 }

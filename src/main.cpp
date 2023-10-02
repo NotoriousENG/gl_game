@@ -15,7 +15,6 @@
 #include "window.hpp"
 #include <SDL2/SDL_log.h>
 #include <memory>
-#include <set>
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -24,8 +23,6 @@ static std::unique_ptr<SpriteBatch> spriteBatcher;
 static flecs::world world;
 
 static std::unique_ptr<Tilemap> tilemap;
-
-static std::set<flecs::entity> entitiesCollidingWithMap;
 
 void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
                          Transform2D &t1, Collider &c1) {
@@ -200,16 +197,11 @@ int main(int argc, char *argv[]) {
                          static_cast<int>(c.vertices.w - c.vertices.y)};
         SDL_Rect found = {0, 0, 0, 0};
         bool isOverlapping = false;
-        tilemap->IsCollidingWith(&rect, found, isOverlapping,
+        tilemap->IsCollidingWith(&rect, found, e,
                                  c.isGrounded); // check for collision
 
         if ((found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0)) {
           push_rect_transform(rect, found, t, c);
-        }
-        if (isOverlapping) {
-          entitiesCollidingWithMap.insert(e);
-        } else {
-          entitiesCollidingWithMap.erase(e);
         }
       });
 
@@ -245,11 +237,10 @@ int main(int argc, char *argv[]) {
       // the rect is the vertices with the position offset
       const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
                                                -c.vertices.x, -c.vertices.y);
-      const auto color =
-          entitiesCollidingWithMap.find(e) == entitiesCollidingWithMap.end()
-              ? glm::vec4(0, 0, 1, 0.5f)
-          : c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
-                         : glm::vec4(0, 1, 0, 0.5f);
+      const auto color = tilemap->HasCollision(e)
+                             ? (c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
+                                             : glm::vec4(0, 1, 0, 0.5f))
+                             : glm::vec4(0, 0, 1, 0.5f);
       spriteBatcher->DrawRect(rect, color);
     });
   }
