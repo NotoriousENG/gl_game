@@ -218,11 +218,7 @@ int main(int argc, char *argv[]) {
 
       // if there is an intersection with a rect slightly above the second
       // rect then the player is grounded
-      const SDL_Rect rect3 = {
-          static_cast<int>(t2.position.x + c2.vertices.x),
-          static_cast<int>(t2.position.y + c2.vertices.y - 1),
-          static_cast<int>(c2.vertices.z - c2.vertices.x),
-          static_cast<int>(c2.vertices.w - c2.vertices.y)};
+      const SDL_Rect rect3 = {rect2.x + 3, rect2.y - 1, rect2.w - 7, 1};
       if (SDL_HasIntersection(&rect1, &rect3)) {
         c1.isGrounded = true;
       }
