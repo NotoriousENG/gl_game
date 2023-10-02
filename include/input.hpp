@@ -45,4 +45,8 @@ public:
 
   // returns a normalized vector for movement
   static glm::vec2 GetVectorMovement();
+
+  static float GetAxisHorizontalMovement();
+
+  static bool GetTriggerJump();
 };

@@ -70,3 +70,14 @@ glm::vec2 InputManager::GetVectorMovement() {
                                  instance->axis_vertical_movement);
   return glm::length(movement) == 0 ? movement : glm::normalize(movement);
 }
+
+float InputManager::GetAxisHorizontalMovement() {
+  std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
+  return instance->axis_horizontal_movement;
+}
+
+bool InputManager::GetTriggerJump() {
+  std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
+  return instance->key_map[SDL_SCANCODE_SPACE].IsJustPressed() ||
+         instance->key_map[SDL_SCANCODE_LALT].IsJustPressed();
+}

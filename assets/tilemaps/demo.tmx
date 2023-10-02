@@ -32,7 +32,7 @@
  </layer>
  <layer id="2" name="Tile Layer 2" width="20" height="10">
   <data encoding="base64" compression="zlib">
-   eJxjYBh+gIXK5jEjsfmpbPYoGNwAAC9UABc=
+   eJxjYBh+gIXK5jEjsfmpbDYtgdJAOwAHALlLeaAdQSQAAIgsAH4=
   </data>
  </layer>
  <layer id="3" name="Tile Layer 3" width="20" height="10">

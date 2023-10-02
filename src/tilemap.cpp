@@ -84,7 +84,6 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
                               flecs::entity entity, bool &isGrounded) {
 
   entitiesCollidingWithMap.erase(entity);
-  isGrounded = false;
 
   // get the bounding SDL Rect for the tilemap
   const SDL_Rect tilemapRect = {
@@ -179,9 +178,6 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
         compositeRect.h != 0) {
       found = compositeRect;
       entitiesCollidingWithMap.insert(entity);
-      // SDL_Log("other: %i, %i, %i, %i\n", other->x, other->y, other->w,
-      //         other->h);
-      // SDL_Log("found: %i, %i, %i, %i\n", found.x, found.y, found.w, found.h);
       return;
     }
   }

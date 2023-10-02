@@ -52,3 +52,11 @@ struct Collider {
   ColliderType type;
   bool isGrounded;
 };
+
+struct Velocity {
+  glm::vec2 value;
+};
+
+struct Gravity {
+  float value;
+};
