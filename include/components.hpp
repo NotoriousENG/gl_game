@@ -1,4 +1,5 @@
 #pragma once
+#include "flecs.h"
 #include "glm/glm.hpp"
 #include "texture.hpp"
 #include <memory>
@@ -49,4 +50,13 @@ struct Collider {
   // collider vertices
   glm::vec4 vertices;
   ColliderType type;
+  bool isGrounded;
+};
+
+struct Velocity {
+  glm::vec2 value;
+};
+
+struct Gravity {
+  float value;
 };

@@ -101,20 +101,22 @@ int main(int argc, char *argv[]) {
   tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   // prefabs
-  const auto Tink =
-      world.prefab("Tink")
-          .set<Transform2D>(
-              Transform2D(glm::vec2(300, 400), glm::vec2(1, 1), 0))
-          .set<Sprite>({texture_tink})
-          .set<Player>({"Player 1"})
-          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
+  const auto Tink = world.prefab("Tink")
+                        .set<Transform2D>(Transform2D(glm::vec2(300, 400),
+                                                      glm::vec2(1, 1), 0))
+                        .set<Sprite>({texture_tink})
+                        .set<Player>({"Player 1"})
+                        .set<Velocity>({glm::vec2(0, 0)})
+                        .set<Collider>({glm::vec4(17, 7, 46, 57),
+                                        ColliderType::SOLID, false});
 
-  const auto Anya =
-      world.prefab("Anya")
-          .set<Transform2D>(
-              Transform2D(glm::vec2(150, 454), glm::vec2(1, 1), 0))
-          .set<Sprite>({texture_anya})
-          .set<Collider>({glm::vec4(17, 7, 46, 57), ColliderType::SOLID});
+  const auto Anya = world.prefab("Anya")
+                        .set<Transform2D>(Transform2D(glm::vec2(150, 454),
+                                                      glm::vec2(1, 1), 0))
+                        .set<Sprite>({texture_anya})
+                        .set<Velocity>({glm::vec2(0, 0)})
+                        .set<Collider>({glm::vec4(17, 7, 46, 57),
+                                        ColliderType::SOLID, false});
 
   // create anya
   const auto anya = world.entity("anya").is_a(Anya);
@@ -123,14 +125,69 @@ int main(int argc, char *argv[]) {
   const auto player = world.entity("player").is_a(Tink);
 
   world.set<Camera>({.position = glm::vec2(0, 0)});
+  world.set<Gravity>({.value = 980.0f});
 
   // player movement + update camera
-  world.system<Player, Transform2D, Sprite>().iter(
-      [](flecs::iter it, Player *p, Transform2D *t, Sprite *s) {
+  world.system<Player, Velocity, Sprite, Collider>().iter(
+      [](flecs::iter it, Player *p, Velocity *v, Sprite *s, Collider *c) {
         const float speed = 200.0f;
-        const glm::vec2 input = InputManager::GetVectorMovement();
+        const float move_x = InputManager::GetAxisHorizontalMovement();
+        const auto jump = InputManager::GetTriggerJump();
         for (int i : it) {
-          t[i].position += input * speed * it.delta_time();
+          v[i].value.x = move_x * speed;
+          if (c[i].isGrounded && jump) {
+            v[i].value.y = -515.0f;
+            c[i].isGrounded = false;
+          }
+        }
+      });
+
+  // gravity system
+  world.system<Velocity, Collider>().iter(
+      [](flecs::iter it, Velocity *v, Collider *c) {
+        const auto dt = it.delta_time();
+        const float g = world.get<Gravity>()->value;
+        for (int i : it) {
+          if (c[i].isGrounded) {
+            v[i].value.y = 0.0f;
+          } else {
+            v[i].value.y += g * dt;
+          }
+        }
+      });
+
+  // velocity system
+  world.system<Velocity, Transform2D>().iter(
+      [](flecs::iter it, Velocity *v, Transform2D *t) {
+        const auto dt = it.delta_time();
+        for (int i : it) {
+          t[i].position += v[i].value * dt;
+        }
+      });
+
+  // collision for entities with tilemap
+  world.system<Transform2D, Collider>().each(
+      [](flecs::entity e, Transform2D &t, Collider &c) {
+        c.isGrounded = false; // reset grounded state
+        const auto tilemapBounds = tilemap->GetBounds();
+        // clamp x position to tilemap bounds
+        t.position.x =
+            glm::clamp(static_cast<int>(t.position.x),
+                       static_cast<int>(tilemapBounds.x - c.vertices.x),
+                       static_cast<int>(tilemap->GetBounds().w - c.vertices.z));
+
+        // collide with tiles
+        SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
+                         static_cast<int>(t.position.y + c.vertices.y),
+                         static_cast<int>(c.vertices.z - c.vertices.x),
+                         static_cast<int>(c.vertices.w - c.vertices.y)};
+        SDL_Rect found = {0, 0, 0, 0};
+        bool isOverlapping = false;
+        tilemap->IsCollidingWith(&rect, found, e,
+                                 c.isGrounded); // check for collision
+
+        if ((found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0)) {
+          push_rect_transform(rect, found, t, c);
         }
       });
 
@@ -154,44 +211,22 @@ int main(int argc, char *argv[]) {
                               static_cast<int>(t2.position.y + c2.vertices.y),
                               static_cast<int>(c2.vertices.z - c2.vertices.x),
                               static_cast<int>(c2.vertices.w - c2.vertices.y)};
-      //// Log both rects
-      // SDL_Log("rect1: %i, %i, %i, %i\n", rect1.x, rect1.y, rect1.w,
-      // rect1.h); SDL_Log("rect2: %i, %i, %i, %i\n", rect2.x, rect2.y,
-      // rect2.w, rect2.h);
 
       if (SDL_HasIntersection(&rect1, &rect2)) {
-        // Calculate the horizontal and vertical distances between the
-        // centers of the collider rectangles
         push_rect_transform(rect1, rect2, t1, c1);
       }
+
+      // if there is an intersection with a rect slightly above the second
+      // rect then the player is grounded
+      const SDL_Rect rect3 = {
+          static_cast<int>(t2.position.x + c2.vertices.x),
+          static_cast<int>(t2.position.y + c2.vertices.y - 1),
+          static_cast<int>(c2.vertices.z - c2.vertices.x),
+          static_cast<int>(c2.vertices.w - c2.vertices.y)};
+      if (SDL_HasIntersection(&rect1, &rect3)) {
+        c1.isGrounded = true;
+      }
     });
-  });
-
-  // collision for entities with tilemap
-  world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
-    const auto tilemapBounds = tilemap->GetBounds();
-    // clamp x position to tilemap bounds
-    t.position.x =
-        glm::clamp(static_cast<int>(t.position.x),
-                   static_cast<int>(tilemapBounds.x - c.vertices.x),
-                   static_cast<int>(tilemap->GetBounds().w - c.vertices.z));
-    // since we want to be able to fall off the map don't worry about y
-    // t.position.y =
-    //     glm::clamp(static_cast<int>(t.position.y),
-    //                static_cast<int>(tilemapBounds.y - c.vertices.y),
-    //                static_cast<int>(tilemap->GetBounds().h - c.vertices.w));
-
-    // collide with tiles
-    SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
-                     static_cast<int>(t.position.y + c.vertices.y),
-                     static_cast<int>(c.vertices.z - c.vertices.x),
-                     static_cast<int>(c.vertices.w - c.vertices.y)};
-    SDL_Rect found = {0, 0, 0, 0};
-    tilemap->IsCollidingWith(&rect, found);
-    if (found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0) {
-      // draw the collider as a red rect
-      push_rect_transform(rect, found, t, c);
-    }
   });
 
   // any rendering should happen after logic
@@ -210,8 +245,6 @@ int main(int argc, char *argv[]) {
     // silly but the tilemap needs to be drawn after the camera is updated
     // and before everything else to avoid jitter
     tilemap->Draw(spriteBatcher.get()); // draw the tilemap
-    // draw all sprites in the batch
-    spriteBatcher->Flush();
   });
 
   // render sprites
@@ -221,13 +254,15 @@ int main(int argc, char *argv[]) {
 
   if (DEBUG_COLLISIONS) {
     // Draw colliders
-    world.system<Transform2D, Collider>().each([](Transform2D &t, Collider &c) {
+    world.system<Transform2D, Collider>().each([](flecs::entity e,
+                                                  Transform2D &t, Collider &c) {
       // the rect is the vertices with the position offset
       const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
                                                -c.vertices.x, -c.vertices.y);
-      const auto color = c.type == ColliderType::SOLID
-                             ? glm::vec4(0, 0, 1, 0.5f)
-                             : glm::vec4(0, 1, 0, 0.5f);
+      const auto color =
+          c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
+                       : (tilemap->HasCollision(e) ? glm::vec4(0, 1, 0, 0.5f)
+                                                   : glm::vec4(0, 0, 1, 0.5f));
       spriteBatcher->DrawRect(rect, color);
     });
   }
