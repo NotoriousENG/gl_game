@@ -2,6 +2,7 @@
 #include "SDL2/SDL_log.h"
 #include "defs.hpp"
 #include "glad/glad.h"
+#include <debug.hpp>
 
 Tilemap::Tilemap(const char *path) {
   this->map.load(path);
@@ -61,7 +62,7 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
         spriteBatch->Draw(texture.get(), position, glm::vec2(1, 1), 0,
                           glm::vec4(1, 1, 1, 1), srcRect);
 
-        if (DEBUG_COLLISIONS) {
+        if (DebugManager::GetRenderColliders()) {
           // get the tile type
           const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
                                                       // tilesets

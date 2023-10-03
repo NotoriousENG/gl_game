@@ -15,6 +15,7 @@
 #include "window.hpp"
 #include <SDL2/SDL_log.h>
 #include <memory>
+#include "debug.hpp"
 
 static std::unique_ptr<Renderer> renderer;
 static bool running = true;
@@ -71,11 +72,31 @@ void main_loop() {
   const Uint8 *key_state = SDL_GetKeyboardState(&num_keys);
   InputManager::Update(key_state, num_keys);
 
+  if (InputManager::GetKey(SDL_SCANCODE_1).IsJustPressed()) {
+      DebugManager::ToggleRenderColliders();
+  }
+
   // Clear the screen
   renderer->Clear();
 
   // run systems
   world.progress();
+
+  if (DebugManager::GetRenderColliders()) {
+    // Draw colliders
+    world.query<Transform2D, Collider>().each([](flecs::entity e,
+                                                  Transform2D &t, Collider &c) {
+      // the rect is the vertices with the position offset
+      const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
+                                               -c.vertices.x, -c.vertices.y);
+      const auto color =
+          c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
+                       : (tilemap->HasCollision(e) ? glm::vec4(0, 1, 0, 0.5f)
+                                                   : glm::vec4(0, 0, 1, 0.5f));
+      spriteBatcher->DrawRect(rect, color);
+    });
+  }
+
 
   // draw all sprites in the batch
   spriteBatcher->Flush();
@@ -247,21 +268,6 @@ int main(int argc, char *argv[]) {
   world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
     spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
   });
-
-  if (DEBUG_COLLISIONS) {
-    // Draw colliders
-    world.system<Transform2D, Collider>().each([](flecs::entity e,
-                                                  Transform2D &t, Collider &c) {
-      // the rect is the vertices with the position offset
-      const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
-                                               -c.vertices.x, -c.vertices.y);
-      const auto color =
-          c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
-                       : (tilemap->HasCollision(e) ? glm::vec4(0, 1, 0, 0.5f)
-                                                   : glm::vec4(0, 0, 1, 0.5f));
-      spriteBatcher->DrawRect(rect, color);
-    });
-  }
 
   // Get connections
   std::unique_ptr<NetManager> net = std::make_unique<NetManager>(
