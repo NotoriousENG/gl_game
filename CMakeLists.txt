@@ -6,7 +6,6 @@ cmake_minimum_required (VERSION 3.8)
 project ("GlGame")
 
 set(GAME_NAME "GlGame" CACHE STRING "Name of the game")
-option(ENABLE_DEBUG_COLLISIONS "Enable DEBUG_COLLISIONS" OFF)
 
 # C++20
 set(CMAKE_CXX_STANDARD 20)
@@ -56,8 +55,7 @@ add_subdirectory(lib/json)
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" 
     "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp" "src/input.cpp"
-    "src/tilemap.cpp"
-)
+    "src/tilemap.cpp" "src/debug.cpp")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_subdirectory(lib/datachannel-wasm)
@@ -87,11 +85,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json)
 # if this is a release build #define DEBUG 1
 if (NOT CMAKE_BUILD_TYPE MATCHES Release) # append AND false to disable in debug
     target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG=1)
-endif()
-
-
-if(ENABLE_DEBUG_COLLISIONS)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_COLLISIONS=1)
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_NAME="${GAME_NAME}")
