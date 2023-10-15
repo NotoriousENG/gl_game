@@ -7,7 +7,7 @@
 #include <cr.h>
 
 CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
-  const int num = 2;
+  const int num = 69;
   assert(ctx);
   switch (operation) {
   case CR_LOAD:
@@ -24,5 +24,5 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
 #endif
 
 void game_logic() {
-  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Anya's World");
+  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Tink's World");
 }

@@ -24,14 +24,8 @@ void App::run() {
                                           initial_window_size.y);
   this->renderer = std::make_unique<Renderer>(this->window.get());
 
-  game_logic();
-
 #ifdef EMSCRIPTEN
   emscripten_set_main_loop(this->update, 0, this->is_running);
-#else
-  while (this->is_running) {
-    this->update();
-  }
 #endif
 
 #ifdef SHARED_GAME
@@ -42,18 +36,25 @@ void App::run() {
   cr_plugin_open(game_ctx, GAME_LIBRARY_PATH);
 
   while (this->is_running) {
+    this->renderer->Clear();
+    this->update();
     cr_plugin_update(game_ctx);
     fflush(stdout);
     fflush(stderr);
+    this->renderer->Present();
   }
 
   cr_plugin_close(game_ctx);
 #else
-
+  while (this->is_running) {
+    this->renderer->Clear();
+    this->update();
+    game_logic();
+    this->renderer->Present();
+  }
+#endif
   this->renderer.reset(); // destroy the renderer this has to be done before the
                           // window is destroyed
-
-#endif
 }
 
 void App::update() {
@@ -63,8 +64,4 @@ void App::update() {
       this->is_running = false;
     }
   }
-
-  this->renderer->Clear();
-
-  this->renderer->Present();
 }
