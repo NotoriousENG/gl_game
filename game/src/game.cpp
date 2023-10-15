@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include <SDL.h>
 #include <engine.hpp>
 
 #ifdef SHARED_GAME
@@ -22,4 +23,6 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
 }
 #endif
 
-void game_logic() { render("Game tells engine to render"); }
+void game_logic() {
+  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Anya's World");
+}
