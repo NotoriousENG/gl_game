@@ -38,6 +38,10 @@ add_subdirectory(game)
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} "src/main.cpp" "src/app.cpp")
 
+# link engine
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/engine/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC engine)
+
 # link game
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/game/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC game)

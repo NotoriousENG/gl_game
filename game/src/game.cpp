@@ -1,17 +1,16 @@
 #include "game.hpp"
 #include <SDL.h>
-#include <engine.hpp>
 
 #ifdef SHARED_GAME
 #include <cassert>
 #include <cr.h>
 
 CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
-  const int num = 69;
+  const int num = 2;
   assert(ctx);
   switch (operation) {
   case CR_LOAD:
-    game_logic();
+    game_init();
     return printf("loaded %i\n", num);
   case CR_UNLOAD:
     return printf("unloaded %i\n", num);
@@ -23,6 +22,6 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
 }
 #endif
 
-void game_logic() {
-  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Tink's World");
+void game_init() {
+  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Anya's World");
 }

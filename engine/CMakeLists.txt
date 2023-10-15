@@ -45,7 +45,8 @@ add_subdirectory(lib/json)
 include_directories(include)
 
 # add the library
-add_library (${PROJECT_NAME} "src/engine.cpp" "src/renderer.cpp" "src/window.cpp")
+add_library (${PROJECT_NAME} STATIC "src/renderer.cpp" "src/window.cpp" "src/input.cpp" "src/shader.cpp" 
+    "src/texture.cpp" "src/sprite-batch.cpp" "src/tilemap.cpp")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_subdirectory(lib/datachannel-wasm)

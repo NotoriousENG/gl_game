@@ -19,10 +19,7 @@ else()
   set(LIB_TYPE STATIC)
 endif()
 
-# set the sources in a variable
-set(SOURCES "src/game.cpp")
-
-add_library (${PROJECT_NAME} ${LIB_TYPE} ${SOURCES})
+add_library (${PROJECT_NAME} ${LIB_TYPE} "src/game.cpp")
 
 target_include_directories(${PROJECT_NAME} PUBLIC ../engine/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC engine)

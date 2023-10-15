@@ -1,5 +1,4 @@
 #include "app.hpp"
-#include <engine.hpp>
 
 #include <defs.hpp>
 #include <glm/glm.hpp>
@@ -49,7 +48,7 @@ void App::run() {
   while (this->is_running) {
     this->renderer->Clear();
     this->update();
-    game_logic();
+    game_init();
     this->renderer->Present();
   }
 #endif

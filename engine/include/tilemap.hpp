@@ -1,5 +1,4 @@
 #pragma once
-#include "components.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
 #include "tmxlite/Map.hpp"
