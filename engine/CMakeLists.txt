@@ -49,35 +49,35 @@ add_library (${PROJECT_NAME} "src/engine.cpp")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_subdirectory(lib/datachannel-wasm)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel-wasm/wasm/include)
-    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-wasm)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel-wasm/wasm/include)
+    target_link_libraries(${PROJECT_NAME} PUBLIC datachannel-wasm)
 else()
     add_subdirectory(lib/libdatachannel)
     if(MSVC)
-        target_compile_options(usrsctp PRIVATE /WX-) # disable warnings as errors for usrsctp on windows this breaks the build?
+        target_compile_options(usrsctp PUBLIC /WX-) # disable warnings as errors for usrsctp on windows this breaks the build?
     endif()
-    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
-    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-static)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
+    target_link_libraries(${PROJECT_NAME} PUBLIC datachannel-static)
 endif()
 
 # self published libraries
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE glad)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC glad)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
+target_link_libraries(${PROJECT_NAME} PUBLIC flecs::flecs_static)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/tmxlite/tmxlite/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE tmxlite)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/tmxlite/tmxlite/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC tmxlite)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/json/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/json/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
 
 # dependencies
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_LIBRARIES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_IMAGE_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_MIXER_LIBRARIES}) # ensure sdl2-mixer "extensions" are installed for .ogg: https://www.reddit.com/r/cataclysmdda/comments/glxgtb/fix_for_sound_problem_when_compiling_in_windows/
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_TTF_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_IMAGE_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_MIXER_LIBRARIES}) # ensure sdl2-mixer "extensions" are installed for .ogg: https://www.reddit.com/r/cataclysmdda/comments/glxgtb/fix_for_sound_problem_when_compiling_in_windows/
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_TTF_LIBRARIES})
