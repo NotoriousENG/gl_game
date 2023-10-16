@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include <renderer.hpp>
-#include <window.hpp>
+#include "renderer.hpp"
+#include "window.hpp"
 
 class App {
 public:

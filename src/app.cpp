@@ -7,7 +7,10 @@
 
 #ifdef SHARED_GAME
 #define CR_HOST
+#include <chrono>
 #include <cr.h>
+#include <thread>
+
 #else
 #include <game.hpp>
 #endif
@@ -29,7 +32,7 @@ void App::run() {
 
 #ifdef SHARED_GAME
 
-  printf("Library path: %s\n", GAME_LIBRARY_PATH);
+  SDL_Log("Library path: %s\n", GAME_LIBRARY_PATH);
 
   cr_plugin game_ctx;
   cr_plugin_open(game_ctx, GAME_LIBRARY_PATH);
@@ -63,4 +66,8 @@ void App::update() {
       this->is_running = false;
     }
   }
+
+  // this->spriteBatcher->DrawRect(glm::vec4(0, 0, 400, 400),
+  //                               glm::vec4(1, 0, 0, 1.0f));
+  // this->spriteBatcher->Flush();
 }

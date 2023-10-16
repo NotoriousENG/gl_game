@@ -81,3 +81,9 @@ bool InputManager::GetTriggerJump() {
   return instance->key_map[SDL_SCANCODE_SPACE].IsJustPressed() ||
          instance->key_map[SDL_SCANCODE_LALT].IsJustPressed();
 }
+
+InputManager *InputManager::GetInstance() { return instance.get(); }
+
+void InputManager::SetInstance(InputManager *new_instance) {
+  instance.reset(new_instance);
+}

@@ -49,4 +49,8 @@ public:
   static float GetAxisHorizontalMovement();
 
   static bool GetTriggerJump();
+
+  static InputManager *GetInstance();
+
+  static void SetInstance(InputManager *new_instance);
 };

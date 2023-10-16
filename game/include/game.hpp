@@ -1,2 +1,11 @@
 #pragma once
-void game_init();
+
+class Game {
+public:
+  Game();
+  ~Game();
+  int init();
+  int update();
+  int unload();
+  int close();
+};
