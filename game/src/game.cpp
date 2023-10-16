@@ -9,23 +9,24 @@
 
 static Game game;
 
+static int loaded_timestamp = 0;
+
 CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
   assert(ctx);
 
   gladLoadGLES2Loader((GLADloadproc)SDL_GL_GetProcAddress);
-
-  const int num = 0;
   // get a random int
   switch (operation) {
   case CR_LOAD:
+    loaded_timestamp = SDL_GetTicks();
     game.init();
-    return printf("loaded %i\n", num);
+    return printf("loaded %i\n", loaded_timestamp);
   case CR_UNLOAD:
     game.unload();
-    return printf("unloaded %i\n", num);
+    return printf("unloaded %i\n", loaded_timestamp);
   case CR_CLOSE:
     game.close();
-    return printf("closed %i\n", num);
+    return printf("closed %i\n", loaded_timestamp);
   case CR_STEP:
     return game.update();
   }
@@ -38,7 +39,7 @@ Game::Game() {}
 Game::~Game() {}
 
 int Game::init() {
-  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Spenc's World");
+  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Anya's World");
 
   return 0;
 }
