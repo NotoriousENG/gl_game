@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+#include <sprite-batch.hpp>
+
+
 class Game {
 public:
   Game();
@@ -8,4 +12,5 @@ public:
   int update();
   int unload();
   int close();
+  std::unique_ptr<SpriteBatch> spriteBatcher;
 };

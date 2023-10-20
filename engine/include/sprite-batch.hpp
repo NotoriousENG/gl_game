@@ -33,6 +33,8 @@ public:
 
   void SetProjection(glm::vec2 windowSize);
 
+  void SetDefaultView();
+
 private:
   std::vector<Vertex> vertices;
   GLuint vbo;

@@ -8,11 +8,7 @@ public:
   ~Window();
 
   SDL_Window *GetSDLWindow() const;
-  int GetWidth() const;
-  int GetHeight() const;
 
 private:
   SDL_Window *window;
-  int width;
-  int height;
 };

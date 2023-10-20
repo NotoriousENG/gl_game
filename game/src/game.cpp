@@ -40,6 +40,10 @@ Game::~Game() {}
 
 int Game::init() {
   SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Anya's World");
+  // Get current window size
+  int w, h;
+  SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
+  this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
 
   return 0;
 }
@@ -53,12 +57,25 @@ int Game::update() {
     SDL_Log("Anya pressed");
   }
 
-  glClearColor(1.0f, 0.5f, 0.0f, 1.0f);
+  glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+
+  int w, h;
+  SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
+
+  this->spriteBatcher->SetProjection(glm::vec2(w, h));
+  this->spriteBatcher->SetDefaultView();
+
+  this->spriteBatcher->DrawRect(glm::vec4(0, 0, 400, 400),
+                                glm::vec4(1, 0, 0, 1.0f));
+  this->spriteBatcher->Flush();
 
   return 0;
 }
 
-int Game::unload() { return 0; }
+int Game::unload() {
+  this->spriteBatcher.reset();
+  return 0;
+}
 
 int Game::close() {
   // clean up gl stuff

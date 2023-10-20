@@ -75,9 +75,7 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
   this->viewUniform = glGetUniformLocation(this->shaderProgram, "view");
 
   // Set the view matrix to the center of the screen by default
-  this->view =
-      glm::translate(glm::mat4(1.0f), glm::vec3(this->windowSize.x / 2,
-                                                this->windowSize.y / 2, 0.0f));
+  this->SetDefaultView();
 
   this->SetProjection(windowSize);
 }
@@ -302,4 +300,10 @@ void SpriteBatch::SetProjection(glm::vec2 windowSize) {
   this->windowSize = windowSize;
   this->projection =
       glm::ortho(0.0f, this->windowSize.x, this->windowSize.y, 0.0f);
+}
+
+void SpriteBatch::SetDefaultView() {
+  this->view =
+      glm::translate(glm::mat4(1.0f), glm::vec3(this->windowSize.x / 2,
+                                                this->windowSize.y / 2, 0.0f));
 }
