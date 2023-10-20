@@ -44,6 +44,8 @@ int Game::init() {
   int w, h;
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
   this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
+  this->textureTink = std::make_shared<Texture>("assets/textures/tink.png");
+  this->textureAnya = std::make_shared<Texture>("assets/textures/anya.png");
 
   return 0;
 }
@@ -65,8 +67,11 @@ int Game::update() {
   this->spriteBatcher->SetProjection(glm::vec2(w, h));
   this->spriteBatcher->SetDefaultView();
 
-  this->spriteBatcher->DrawRect(glm::vec4(0, 0, 400, 400),
+  this->spriteBatcher->DrawRect(glm::vec4(10, 0, 400, 400),
                                 glm::vec4(1, 0, 0, 1.0f));
+
+  this->spriteBatcher->Draw(this->textureTink.get(), glm::vec2(100, 100));
+  this->spriteBatcher->Draw(this->textureAnya.get(), glm::vec2(0, 0));
   this->spriteBatcher->Flush();
 
   return 0;
