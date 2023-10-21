@@ -56,19 +56,6 @@ if (WIN32)
         set(SUBSYSTEM_LINKER_OPTIONS "/SUBSYSTEM:WINDOWS" "/ENTRY:mainCRTStartup" "/LTCG")
     endif()
     target_link_options(${PROJECT_NAME} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
-
-    # windows cmake puts into the build type dir
-    add_custom_target(copy_assets
-        # log Copying on Windows to 
-        COMMAND echo Copying assets to ${CMAKE_CURRENT_BINARY_DIR}/assets
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
-    )
-    add_dependencies(${PROJECT_NAME} copy_assets) 
-else()
-    add_custom_target(copy_assets
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
-    )
-    add_dependencies(${PROJECT_NAME} copy_assets)
 endif()
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")

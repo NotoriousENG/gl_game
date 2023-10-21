@@ -23,3 +23,15 @@ add_library (${PROJECT_NAME} ${LIB_TYPE} "src/game.cpp")
 
 target_include_directories(${PROJECT_NAME} PUBLIC ../engine/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC engine)
+
+# set a variable for the directory where the assets are copied to, on non windows it is CMAKE_RUNTIME_OUTPUT_DIRECTORY, on windows it is CMAKE_RUNTIME_OUTPUT_DIRECTORY/(Debug|Release)
+if(WIN32)
+    set(FINAL_BINARY_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>)
+else()
+    set(FINAL_BINARY_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+endif()
+
+add_custom_target(copy_assets
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${FINAL_BINARY_DIR}/assets
+    )
+add_dependencies(${PROJECT_NAME} copy_assets)
