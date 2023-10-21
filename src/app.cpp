@@ -10,7 +10,6 @@
 #include <chrono>
 #include <cr.h>
 #include <thread>
-
 #else
 #include <game.hpp>
 #endif
@@ -26,48 +25,55 @@ void App::run() {
                                           initial_window_size.y);
   this->renderer = std::make_unique<Renderer>(this->window.get());
 
-#ifdef EMSCRIPTEN
-  emscripten_set_main_loop(this->update, 0, this->is_running);
-#endif
-
 #ifdef SHARED_GAME
-
   SDL_Log("Library path: %s\n", GAME_LIBRARY_PATH);
-
   cr_plugin game_ctx;
   cr_plugin_open(game_ctx, GAME_LIBRARY_PATH);
+#else
+  this->game.init();
+#endif
 
-  while (this->is_running) {
-    this->renderer->Clear();
-    this->update();
-    cr_plugin_update(game_ctx);
-    fflush(stdout);
-    fflush(stderr);
-    this->renderer->Present();
-  }
-
-  cr_plugin_close(game_ctx);
+#ifdef EMSCRIPTEN
+  emscripten_set_main_loop(this->update, 0, this->is_running);
 #else
   while (this->is_running) {
-    this->renderer->Clear();
     this->update();
-    game_init();
-    this->renderer->Present();
   }
 #endif
-  this->renderer.reset(); // destroy the renderer this has to be done before the
-                          // window is destroyed
+
+  this->onClose();
 }
 
 void App::update() {
+  this->renderer->Clear();
+  this->poll_events();
+#ifdef SHARED_GAME
+  cr_plugin_update(game_ctx);
+  fflush(stdout);
+  fflush(stderr);
+#else
+  game.update();
+#endif
+  this->renderer->Present();
+}
+
+void App::onClose() {
+#ifdef SHARED_GAME
+  cr_plugin_close(game_ctx);
+#else
+  game.unload();
+  game.close();
+#endif
+  // destroy the renderer this has to be done before the
+  // window is destroyed
+  this->renderer.reset();
+}
+
+void App::poll_events() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     if (event.type == SDL_QUIT) {
       this->is_running = false;
     }
   }
-
-  // this->spriteBatcher->DrawRect(glm::vec4(0, 0, 400, 400),
-  //                               glm::vec4(1, 0, 0, 1.0f));
-  // this->spriteBatcher->Flush();
 }

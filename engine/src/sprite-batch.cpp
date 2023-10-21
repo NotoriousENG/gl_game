@@ -123,9 +123,6 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
     srcRect = textureRect;
   }
 
-  // round the position (remove stuttering for low resolutions)
-  position = glm::vec2(glm::ceil(position.x), glm::round(position.y));
-
   glm::vec2 center(position.x + (srcRect.z * scale.x) * 0.5f,
                    position.y + (srcRect.w * scale.y) * 0.5f);
 

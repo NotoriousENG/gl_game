@@ -9,8 +9,6 @@
 #include <cassert>
 #include <cr.h>
 
-static Game game;
-
 static int loaded_timestamp = 0;
 
 CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
@@ -21,22 +19,24 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
   switch (operation) {
   case CR_LOAD:
     loaded_timestamp = SDL_GetTicks();
-    game.init();
+    game->init();
     return printf("loaded %i\n", loaded_timestamp);
   case CR_UNLOAD:
-    game.unload();
+    game->unload();
     return printf("unloaded %i\n", loaded_timestamp);
   case CR_CLOSE:
-    game.close();
+    game->close();
     return printf("closed %i\n", loaded_timestamp);
   case CR_STEP:
-    return game.update();
+    return game->update();
   }
   return 0;
 }
 #endif
 
-Game::Game() {}
+static Game *game; // this is dirty but it works for now
+
+Game::Game() { game = this; }
 
 Game::~Game() {}
 
@@ -132,7 +132,7 @@ int Game::init() {
   world.system<Velocity, Collider>().iter(
       [](flecs::iter it, Velocity *v, Collider *c) {
         const auto dt = it.delta_time();
-        const float g = game.world.get<Gravity>()->value;
+        const float g = game->world.get<Gravity>()->value;
         for (int i : it) {
           if (c[i].isGrounded) {
             v[i].value.y = 0.0f;
@@ -155,12 +155,12 @@ int Game::init() {
   world.system<Transform2D, Collider>().each(
       [](flecs::entity e, Transform2D &t, Collider &c) {
         c.isGrounded = false; // reset grounded state
-        const auto tilemapBounds = game.tilemap->GetBounds();
+        const auto tilemapBounds = game->tilemap->GetBounds();
         // clamp x position to tilemap bounds
         t.position.x = glm::clamp(
             static_cast<int>(t.position.x),
             static_cast<int>(tilemapBounds.x - c.vertices.x),
-            static_cast<int>(game.tilemap->GetBounds().w - c.vertices.z));
+            static_cast<int>(game->tilemap->GetBounds().w - c.vertices.z));
 
         // collide with tiles
         SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
@@ -169,11 +169,11 @@ int Game::init() {
                          static_cast<int>(c.vertices.w - c.vertices.y)};
         SDL_Rect found = {0, 0, 0, 0};
         bool isOverlapping = false;
-        game.tilemap->IsCollidingWith(&rect, found, e,
-                                      c.isGrounded); // check for collision
+        game->tilemap->IsCollidingWith(&rect, found, e,
+                                       c.isGrounded); // check for collision
 
         if ((found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0)) {
-          game.push_rect_transform(rect, found, t, c);
+          game->push_rect_transform(rect, found, t, c);
         }
       });
 
@@ -182,7 +182,7 @@ int Game::init() {
                                                         Transform2D &t1,
                                                         Collider &c1,
                                                         Player &p1) {
-    const auto collisionQuery = game.world.query<Transform2D, Collider>();
+    const auto collisionQuery = game->world.query<Transform2D, Collider>();
     collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
                                         Collider &c2) {
       if (e1.id() == e2.id()) {
@@ -198,7 +198,7 @@ int Game::init() {
                               static_cast<int>(c2.vertices.w - c2.vertices.y)};
 
       if (SDL_HasIntersection(&rect1, &rect2)) {
-        game.push_rect_transform(rect1, rect2, t1, c1);
+        game->push_rect_transform(rect1, rect2, t1, c1);
       }
 
       // if there is an intersection with a rect slightly above the second
@@ -211,21 +211,21 @@ int Game::init() {
   });
   // update sprite batcher uniforms from camera and draw tilemap
   world.system<Camera>().each([](Camera &c) {
-    const auto playerQuery = game.world.query<Sprite, Transform2D, Player>();
+    const auto playerQuery = game->world.query<Sprite, Transform2D, Player>();
     playerQuery.each([&c](Sprite &s, Transform2D &t, Player &p) {
       const auto rect = s.texture->GetTextureRect();
       glm::vec2 offset = glm::vec2(rect.z, rect.w) / 2.0f;
       c.position = t.position + offset;
     });
-    game.spriteBatcher->UpdateCamera(c.position, game.tilemap->GetBounds());
+    game->spriteBatcher->UpdateCamera(c.position, game->tilemap->GetBounds());
 
     // silly but the tilemap needs to be drawn after the camera is updated
     // and before everything else to avoid jitter
-    game.tilemap->Draw(game.spriteBatcher.get()); // draw the tilemap
+    game->tilemap->Draw(game->spriteBatcher.get()); // draw the tilemap
   });
   // render sprites
   this->world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
-    game.spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
+    game->spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
   });
 
   return 0;
@@ -250,10 +250,10 @@ int Game::update() {
       const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
                                                -c.vertices.x, -c.vertices.y);
       const auto color = c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
-                                      : (game.tilemap->HasCollision(e)
+                                      : (game->tilemap->HasCollision(e)
                                              ? glm::vec4(0, 1, 0, 0.5f)
                                              : glm::vec4(0, 0, 1, 0.5f));
-      game.spriteBatcher->DrawRect(rect, color);
+      game->spriteBatcher->DrawRect(rect, color);
     });
     this->tilemap->DrawColliders(this->spriteBatcher.get());
   }
