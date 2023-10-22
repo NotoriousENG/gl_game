@@ -1,18 +1,11 @@
+#define CR_HOST
+
 #include "app.hpp"
 
 #include <defs.hpp>
 #include <glm/glm.hpp>
 
 #include <stdio.h>
-
-#ifdef SHARED_GAME
-#define CR_HOST
-#include <chrono>
-#include <cr.h>
-#include <thread>
-#else
-#include <game.hpp>
-#endif
 
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
@@ -35,9 +28,7 @@ void App::run() {
   this->renderer = std::make_unique<Renderer>(this->window.get());
 
 #ifdef SHARED_GAME
-  SDL_Log("Library path: %s\n", GAME_LIBRARY_PATH);
-  cr_plugin game_ctx;
-  cr_plugin_open(game_ctx, GAME_LIBRARY_PATH);
+  cr_plugin_open(this->game_ctx, GAME_LIBRARY_PATH);
 #else
   this->game.init();
 #endif
@@ -58,21 +49,22 @@ void App::update() {
   this->renderer->Clear();
   this->poll_events();
 #ifdef SHARED_GAME
-  cr_plugin_update(game_ctx);
+  cr_plugin_update(this->game_ctx);
   fflush(stdout);
   fflush(stderr);
 #else
-  game.update();
+  this->game.update();
 #endif
   this->renderer->Present();
 }
 
 void App::onClose() {
 #ifdef SHARED_GAME
-  cr_plugin_close(game_ctx);
+  cr_plugin_close(this->game_ctx);
+  SDL_Log("App closed\n");
 #else
-  game.unload();
-  game.close();
+  this->game.unload();
+  this->game.close();
 #endif
   // destroy the renderer this has to be done before the
   // window is destroyed

@@ -5,6 +5,8 @@
 #include <glm/glm.hpp>
 #include <input.hpp>
 
+static Game *game; // this is dirty but it works for now
+
 #ifdef SHARED_GAME
 #include <cassert>
 #include <cr.h>
@@ -19,6 +21,7 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
   switch (operation) {
   case CR_LOAD:
     loaded_timestamp = SDL_GetTicks();
+    game = new Game();
     game->init();
     return printf("loaded %i\n", loaded_timestamp);
   case CR_UNLOAD:
@@ -26,6 +29,7 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
     return printf("unloaded %i\n", loaded_timestamp);
   case CR_CLOSE:
     game->close();
+    delete game;
     return printf("closed %i\n", loaded_timestamp);
   case CR_STEP:
     return game->update();
@@ -33,8 +37,6 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
   return 0;
 }
 #endif
-
-static Game *game; // this is dirty but it works for now
 
 Game::Game() { game = this; }
 

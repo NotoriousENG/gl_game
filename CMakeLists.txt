@@ -3,7 +3,7 @@
 #
 cmake_minimum_required (VERSION 3.12)
 
-project ("Application")
+project ("GlGame")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_compile_definitions("EMSCRIPTEN")
@@ -17,16 +17,21 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
     set(CMAKE_EXECUTABLE_SUFFIX .html)
 else()
-    option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+    option(BUILD_SHARED_LIBS "Build shared libraries" ON) # when distributing, set to OFF
 endif()
 
 # log if we are building shared or static libraries
 message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 
+if (WIN32)
+    # vs2022 and vscode CMake extension put output files in different places do this for now
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+endif()
+
 # set a define based on the BUILD_SHARED_LIBS option
 if(BUILD_SHARED_LIBS)
-  add_definitions(-DSHARED_GAME)
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testing) # simplify testing for shared libs
+  add_compile_definitions(SHARED_GAME=1)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}) # simplify testing for shared libs
   set(GAME_LIBRARY_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}")
   add_compile_definitions(GAME_LIBRARY_PATH="${GAME_LIBRARY_PATH}")   # so we know where to hot reload from
 endif()

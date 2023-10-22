@@ -4,7 +4,10 @@
 
 #include "renderer.hpp"
 #include "window.hpp"
-#ifndef SHARED_GAME
+
+#ifdef SHARED_GAME
+#include <cr.h>
+#else
 #include <game.hpp>
 #endif
 
@@ -26,7 +29,9 @@ private:
   std::unique_ptr<Window> window;
   std::unique_ptr<Renderer> renderer;
 
-#ifndef SHARED_GAME
+#ifdef SHARED_GAME
+  cr_plugin game_ctx;
+#else
   Game game;
 #endif
 };
