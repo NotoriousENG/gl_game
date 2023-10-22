@@ -1,25 +1,6 @@
-[submodule "lib/glm"]
-	path = lib/glm
-	url = https://github.com/g-truc/glm.git
-	branch = 0.9.8
 [submodule "emsdk"]
 	path = emsdk
 	url = https://github.com/emscripten-core/emsdk
-[submodule "lib/datachannel-wasm"]
-	path = lib/datachannel-wasm
-	url = https://github.com/paullouisageneau/datachannel-wasm.git
-[submodule "lib/libdatachannel"]
-	path = lib/libdatachannel
-	url = https://github.com/paullouisageneau/libdatachannel.git
-[submodule "lib/json"]
-	path = lib/json
-	url = https://github.com/nlohmann/json
-[submodule "lib/flecs"]
-	path = lib/flecs
-	url = https://github.com/SanderMertens/flecs
-[submodule "lib/tmxlite"]
-	path = lib/tmxlite
-	url = https://github.com/fallahn/tmxlite
 [submodule "engine/lib/flecs"]
 	path = engine/lib/flecs
 	url = https://github.com/SanderMertens/flecs
