@@ -1,7 +1,6 @@
 #include "window.hpp"
 
-Window::Window(const char *title, int width, int height)
-    : width(width), height(height) {
+Window::Window(const char *title, int width, int height) {
   // Initialize SDL
   SDL_Init(SDL_INIT_VIDEO);
   SDL_Log("SDL initialized");
@@ -24,7 +23,3 @@ Window::~Window() {
 }
 
 SDL_Window *Window::GetSDLWindow() const { return window; }
-
-int Window::GetWidth() const { return width; }
-
-int Window::GetHeight() const { return height; }

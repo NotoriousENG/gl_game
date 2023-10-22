@@ -27,9 +27,17 @@ void Renderer::openglCallbackFunction(GLenum source, GLenum type, GLuint id,
 }
 
 Renderer::Renderer(Window *window) {
-  // Create OpenGL context
-  glContext = SDL_GL_CreateContext(window->GetSDLWindow());
-  if (!glContext) {
+// Create OpenGL context
+// Set the OpenGL context attributes (needed for renderdoc)
+#ifndef EMSCRIPTEN
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,
+                      SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+#endif
+
+  this->glContext = SDL_GL_CreateContext(window->GetSDLWindow());
+  if (!this->glContext) {
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                  "Failed to create OpenGL context: %s", SDL_GetError());
     return;
@@ -65,7 +73,7 @@ Renderer::Renderer(Window *window) {
 
 Renderer::~Renderer() {
   // Destroy OpenGL context
-  SDL_GL_DeleteContext(glContext);
+  SDL_GL_DeleteContext(this->glContext);
   SDL_Log("OpenGL context destroyed");
 }
 

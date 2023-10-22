@@ -1,9 +1,40 @@
 # CMakeList.txt : CMake project for TinksWorld, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.12)
 
 project ("GlGame")
+
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+    add_compile_definitions("EMSCRIPTEN")
+    
+    set(BUILD_SHARED_LIBS OFF)
+
+    set(ENV{EMCC_DEBUG} 1)
+    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s FULL_ES3 -s INITIAL_MEMORY=64MB -s TOTAL_STACK=32MB -s ALLOW_MEMORY_GROWTH=1 -s ASSERTIONS=1 -s NO_DISABLE_EXCEPTION_CATCHING -g3 --preload-file assets --use-preload-plugins")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_EXECUTABLE_SUFFIX .html)
+else()
+    option(BUILD_SHARED_LIBS "Build shared libraries" ON) # when distributing, set to OFF
+endif()
+
+# log if we are building shared or static libraries
+message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+
+if (WIN32)
+    # vs2022 and vscode CMake extension put output files in different places do this for now
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+endif()
+
+# set a define based on the BUILD_SHARED_LIBS option
+if(BUILD_SHARED_LIBS)
+  add_compile_definitions(SHARED_GAME=1)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}) # simplify testing for shared libs
+  set(GAME_LIBRARY_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  add_compile_definitions(GAME_LIBRARY_PATH="${GAME_LIBRARY_PATH}")   # so we know where to hot reload from
+endif()
 
 set(GAME_NAME "GlGame" CACHE STRING "Name of the game")
 
@@ -11,94 +42,30 @@ set(GAME_NAME "GlGame" CACHE STRING "Name of the game")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-SET(NO_MEDIA ON CACHE BOOL "Disable media support in libdatachannel")
-SET(USE_SYSTEM_JSON ON CACHE BOOL "Use system Nlohmann JSON")
-SET(NO_EXAMPLES ON CACHE BOOL "Disable examples")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-# log 5the build variant
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-# print the current cmake build environment
-message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+# add engine
+add_subdirectory(engine)
 
-if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-    add_compile_definitions("EMSCRIPTEN")
-    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s FULL_ES3 -s ASSERTIONS=2 -s INITIAL_MEMORY=64MB -s TOTAL_STACK=32MB -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING -gsource-map --preload-file assets --use-preload-plugins")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
-    set(CMAKE_EXECUTABLE_SUFFIX .html)
-else()
-    # if CLANG/ GCC use GNU99 (This ensures that aflecs ddons that rely on time & socket functions are compiled correctly.)
-    if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
-    endif()
-    find_package(SDL2 REQUIRED)
-    find_package(sdl2-mixer REQUIRED)
-    find_package(sdl2-image REQUIRED)
-    find_package(sdl2-ttf REQUIRED)
-endif()
-
-# Add library subdirectories
-add_subdirectory(lib/glad)
-add_subdirectory(lib/flecs)
-
-# Set the TMXLITE_STATIC_LIB option to TRUE to request static linking
-SET(TMXLITE_STATIC_LIB TRUE CACHE BOOL "Should tmxlite be built as a static or shared lib?")
-add_subdirectory(lib/tmxlite/tmxlite)
-
-add_subdirectory(lib/json)
+# add game
+add_subdirectory(game)
 
 # Add source to this project's executable.
-add_executable (${PROJECT_NAME} "src/main.cpp" "src/window.cpp" "src/renderer.cpp" 
-    "src/texture.cpp" "src/shader.cpp" "src/sprite-batch.cpp" "src/input.cpp"
-    "src/tilemap.cpp" "src/debug.cpp")
+add_executable (${PROJECT_NAME} "src/main.cpp" "src/app.cpp")
 
-if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-    add_subdirectory(lib/datachannel-wasm)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel-wasm/wasm/include)
-    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-wasm)
-else()
-    add_subdirectory(lib/libdatachannel)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/libdatachannel/include)
-    target_link_libraries(${PROJECT_NAME} PRIVATE datachannel-static)
-endif()
+# link engine
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/engine/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC engine)
 
-
-# self published libraries
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glad/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE glad)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/tmxlite/tmxlite/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE tmxlite)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib/json/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json)
-
-# if this is a release build #define DEBUG 1
-if (NOT CMAKE_BUILD_TYPE MATCHES Release) # append AND false to disable in debug
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG=1)
-endif()
-
-target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_NAME="${GAME_NAME}")
+# link game
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/game/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC game)
 
 # project includes
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/include")
-
-# dependencies
-target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_IMAGE_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_MIXER_LIBRARIES}) # ensure sdl2-mixer "extensions" are installed for .ogg: https://www.reddit.com/r/cataclysmdda/comments/glxgtb/fix_for_sound_problem_when_compiling_in_windows/
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_TTF_LIBRARIES})
 
 if (WIN32)
     # /ENTRY:mainCRTStartup keeps the same "main" function instead of requiring "WinMain"
@@ -107,19 +74,6 @@ if (WIN32)
         set(SUBSYSTEM_LINKER_OPTIONS "/SUBSYSTEM:WINDOWS" "/ENTRY:mainCRTStartup" "/LTCG")
     endif()
     target_link_options(${PROJECT_NAME} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
-
-    # windows cmake puts into the build type dir
-    add_custom_target(copy_assets
-        # log Copying on Windows to 
-        COMMAND echo Copying assets to ${CMAKE_CURRENT_BINARY_DIR}/assets
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
-    )
-    add_dependencies(${PROJECT_NAME} copy_assets) 
-else()
-    add_custom_target(copy_assets
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/assets
-    )
-    add_dependencies(${PROJECT_NAME} copy_assets)
 endif()
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")

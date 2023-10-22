@@ -1,5 +1,4 @@
 #pragma once
-#include "components.hpp"
 #include "sprite-batch.hpp"
 #include "texture.hpp"
 #include "tmxlite/Map.hpp"
@@ -17,6 +16,7 @@ public:
   Tilemap(const char *path);
   ~Tilemap();
   void Draw(SpriteBatch *spriteBatch);
+  void DrawColliders(SpriteBatch *spriteBatch);
   void IsCollidingWith(SDL_Rect *other, SDL_Rect &found, flecs::entity entity,
                        bool &isGrounded);
   SDL_Rect GetBounds();

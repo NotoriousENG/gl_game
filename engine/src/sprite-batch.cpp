@@ -120,25 +120,6 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
     srcRect = textureRect;
   }
 
-  // Sprite culling
-  // don't draw if outside of the camera rect bounds
-  const auto bounds =
-      this->windowSize /*- glm::vec2(128, 128)*/; // uncomment this to see the
-                                                  // culling
-  SDL_Rect cameraRectSDL = {
-      static_cast<int>(static_cast<int>(this->cameraPosition.x) - bounds.x / 2),
-      static_cast<int>(static_cast<int>(this->cameraPosition.y) - bounds.y / 2),
-      static_cast<int>(bounds.x), static_cast<int>(bounds.y)};
-  // get the bounding rect of the sprite (@TODO: account for rotation)
-  SDL_Rect spriteRectSDL = {static_cast<int>(position.x),
-                            static_cast<int>(position.y),
-                            static_cast<int>(srcRect.z * scale.x),
-                            static_cast<int>(srcRect.w * scale.y)};
-  // check if the sprite is outside the camera rect
-  if (!SDL_HasIntersection(&cameraRectSDL, &spriteRectSDL)) {
-    return;
-  }
-
   glm::vec2 center(position.x + (srcRect.z * scale.x) * 0.5f,
                    position.y + (srcRect.w * scale.y) * 0.5f);
 

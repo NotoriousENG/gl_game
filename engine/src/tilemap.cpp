@@ -2,7 +2,6 @@
 #include "SDL2/SDL_log.h"
 #include "defs.hpp"
 #include "glad/glad.h"
-#include <debug.hpp>
 
 Tilemap::Tilemap(const char *path) {
   this->map.load(path);
@@ -61,20 +60,46 @@ void Tilemap::Draw(SpriteBatch *spriteBatch) {
         // draw the tile
         spriteBatch->Draw(texture.get(), position, glm::vec2(1, 1), 0,
                           glm::vec4(1, 1, 1, 1), srcRect);
+      }
+    }
+  }
+}
 
-        if (DebugManager::GetRenderColliders()) {
-          // get the tile type
-          const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
-                                                      // tilesets
-          const auto &tilesetTile = tileset.getTile(tile.ID);
+void Tilemap::DrawColliders(SpriteBatch *spriteBatch) {
+  // loop over the map's layers
+  for (int i = 0; i < map.getLayers().size(); i++) {
+    const auto &layer = map.getLayers()[i];
+    // skip all layers that are not tile layers
+    if (layer->getType() != tmx::Layer::Type::Tile) {
+      continue;
+    }
+    // cast to a tile layer
+    const auto tileLayer = layer->getLayerAs<tmx::TileLayer>();
 
-          if (tilesetTile->className == "SOLID") {
-            // draw the collider as a red rect
-            spriteBatch->DrawRect(glm::vec4(position.x, position.y,
-                                            map.getTileSize().x,
-                                            map.getTileSize().y),
-                                  glm::vec4(1, 0, 0, 0.5f));
-          }
+    // loop over all the tiles in the layer (x and y)
+    for (int x = 0; x < tileLayer.getSize().x; x++) {
+      for (int y = 0; y < tileLayer.getSize().y; y++) {
+        // draw the tile
+        const auto tile = tileLayer.getTiles()[x + y * tileLayer.getSize().x];
+        if (tile.ID == 0) {
+          continue;
+        }
+
+        // get the position of the tile
+        const glm::vec2 position =
+            glm::vec2(x * map.getTileSize().x, y * map.getTileSize().y);
+
+        // get the tile type
+        const auto &tileset = map.getTilesets()[0]; // @TODO: support multiple
+                                                    // tilesets
+        const auto &tilesetTile = tileset.getTile(tile.ID);
+
+        if (tilesetTile->className == "SOLID") {
+          // draw the collider as a red rect
+          spriteBatch->DrawRect(glm::vec4(position.x, position.y,
+                                          map.getTileSize().x,
+                                          map.getTileSize().y),
+                                glm::vec4(1, 0, 0, 0.5f));
         }
       }
     }
@@ -96,8 +121,8 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
   }
 
   // get the possible tiles that could be colliding with the other rect
-  const int startX = (other->x - 1) / map.getTileSize().x;
-  const int startY = (other->y - 1) / map.getTileSize().y;
+  const int startX = (other->x) / map.getTileSize().x;
+  const int startY = (other->y) / map.getTileSize().y;
   const int endX = (other->x + other->w + 1) / map.getTileSize().x;
   const int endY = (other->y + other->h + 1) / map.getTileSize().y;
 
