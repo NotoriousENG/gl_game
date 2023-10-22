@@ -77,6 +77,7 @@ void Game::push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
 }
 
 int Game::init() {
+  SDL_Log("Game init");
   SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Anya's World");
   // Get current window size
   int w, h;
@@ -178,11 +179,12 @@ int Game::init() {
       });
 
   // Colision Between player + entities
-  world.system<Transform2D, Collider, Player>().each([](flecs::entity e1,
-                                                        Transform2D &t1,
-                                                        Collider &c1,
-                                                        Player &p1) {
-    const auto collisionQuery = game->world.query<Transform2D, Collider>();
+  const auto collisionQuery = game->world.query<Transform2D, Collider>();
+  world.system<Transform2D, Collider, Player>().each([collisionQuery](
+                                                         flecs::entity e1,
+                                                         Transform2D &t1,
+                                                         Collider &c1,
+                                                         Player &p1) {
     collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
                                         Collider &c2) {
       if (e1.id() == e2.id()) {
@@ -210,8 +212,11 @@ int Game::init() {
     });
   });
   // update sprite batcher uniforms from camera and draw tilemap
-  world.system<Camera>().each([](Camera &c) {
-    const auto playerQuery = game->world.query<Sprite, Transform2D, Player>();
+  const auto playerQuery =
+      game->world
+          .query<Sprite, Transform2D, Player>(); // note this has to be declared
+                                                 // outside for emscripten
+  world.system<Camera>().each([playerQuery](Camera &c) {
     playerQuery.each([&c](Sprite &s, Transform2D &t, Player &p) {
       const auto rect = s.texture->GetTextureRect();
       glm::vec2 offset = glm::vec2(rect.z, rect.w) / 2.0f;

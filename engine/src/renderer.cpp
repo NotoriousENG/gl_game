@@ -27,12 +27,14 @@ void Renderer::openglCallbackFunction(GLenum source, GLenum type, GLuint id,
 }
 
 Renderer::Renderer(Window *window) {
-  // Create OpenGL context
-  // Set the OpenGL context attributes (needed for renderdoc)
+// Create OpenGL context
+// Set the OpenGL context attributes (needed for renderdoc)
+#ifndef EMSCRIPTEN
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS,
                       SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+#endif
 
   this->glContext = SDL_GL_CreateContext(window->GetSDLWindow());
   if (!this->glContext) {

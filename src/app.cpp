@@ -14,6 +14,15 @@
 #include <game.hpp>
 #endif
 
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#include <emscripten/html5.h>
+
+static App *app_instance;
+
+void emscripten_update() { app_instance->update(); }
+#endif
+
 App::App() { this->is_running = true; }
 
 App::~App() {}
@@ -34,7 +43,8 @@ void App::run() {
 #endif
 
 #ifdef EMSCRIPTEN
-  emscripten_set_main_loop(this->update, 0, this->is_running);
+  app_instance = this;
+  emscripten_set_main_loop(emscripten_update, 0, this->is_running);
 #else
   while (this->is_running) {
     this->update();

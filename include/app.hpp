@@ -8,6 +8,10 @@
 #include <game.hpp>
 #endif
 
+#ifdef EMSCRIPTEN
+void emscripten_update();
+#endif
+
 class App {
 public:
   App();

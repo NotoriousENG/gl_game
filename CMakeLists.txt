@@ -5,7 +5,20 @@ cmake_minimum_required (VERSION 3.12)
 
 project ("Application")
 
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+    add_compile_definitions("EMSCRIPTEN")
+    
+    set(BUILD_SHARED_LIBS OFF)
+
+    set(ENV{EMCC_DEBUG} 1)
+    set(USE_FLAGS "-s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_SDL_MIXER=2 -s USE_SDL_TTF=2 -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s FULL_ES3 -s INITIAL_MEMORY=64MB -s TOTAL_STACK=32MB -s ALLOW_MEMORY_GROWTH=1 -s ASSERTIONS=1 -s NO_DISABLE_EXCEPTION_CATCHING -g3 --preload-file assets --use-preload-plugins")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_EXECUTABLE_SUFFIX .html)
+else()
+    option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+endif()
 
 # log if we are building shared or static libraries
 message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")

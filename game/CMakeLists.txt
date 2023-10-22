@@ -31,7 +31,14 @@ else()
     set(FINAL_BINARY_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif()
 
-add_custom_target(copy_assets
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${FINAL_BINARY_DIR}/assets
-    )
-add_dependencies(${PROJECT_NAME} copy_assets)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+  add_custom_target(copy_assets
+          COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${FINAL_BINARY_DIR}/assets
+      )
+  add_dependencies(${PROJECT_NAME} copy_assets)
+else()
+  add_custom_target(copy_assets
+          COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${CMAKE_CURRENT_BINARY_DIR}/../assets
+      )
+  add_dependencies(${PROJECT_NAME} copy_assets)
+endif()
