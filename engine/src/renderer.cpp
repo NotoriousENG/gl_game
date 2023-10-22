@@ -86,7 +86,3 @@ void Renderer::Present() {
   // Swap the front and back buffers
   SDL_GL_SwapWindow(SDL_GL_GetCurrentWindow());
 }
-
-void Renderer::SetClearColor(float r, float g, float b, float a) {
-  glClearColor(r, g, b, a);
-}

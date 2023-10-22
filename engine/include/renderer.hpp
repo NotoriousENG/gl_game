@@ -16,7 +16,6 @@ public:
 
   void Clear();
   void Present();
-  void SetClearColor(float r, float g, float b, float a);
 
 private:
   SDL_GLContext glContext;
