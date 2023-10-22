@@ -3,9 +3,6 @@ name: Release Build
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-    types: [closed]
 
 jobs:
   release_web:
@@ -61,7 +58,7 @@ jobs:
         with:
           name: web-release
           path: release
-      
+
       - name: Install Butler
         run: |
           curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
