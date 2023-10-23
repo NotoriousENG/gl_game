@@ -4,6 +4,7 @@
 #include <components.hpp>
 #include <memory>
 #include <sprite-batch.hpp>
+#include <spritesheet.hpp>
 #include <texture.hpp>
 #include <tilemap.hpp>
 
@@ -22,6 +23,8 @@ public:
   std::unique_ptr<SpriteBatch> spriteBatcher;
   std::shared_ptr<Texture> textureTink;
   std::shared_ptr<Texture> textureAnya;
+
+  std::shared_ptr<SpriteSheet> spritesheet;
 
   std::unique_ptr<Tilemap> tilemap;
   flecs::world world;

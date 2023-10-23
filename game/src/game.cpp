@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <input.hpp>
+#include <utils.hpp>
 
 static Game *game; // this is dirty but it works for now
 
@@ -89,15 +90,22 @@ int Game::init() {
   this->textureAnya = std::make_shared<Texture>("assets/textures/anya.png");
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
+  this->spritesheet =
+      std::make_shared<SpriteSheet>("assets/textures/spritesheet_atlas.json",
+                                    "assets/textures/spritesheet.png");
+
+  const glm::vec4 playerRect =
+      sdlRectToVec4(this->spritesheet->GetSpriteRect(0));
+
   // prefabs
-  const auto Tink = world.prefab("Tink")
-                        .set<Transform2D>(Transform2D(glm::vec2(300, 400),
-                                                      glm::vec2(1, 1), 0))
-                        .set<Sprite>({this->textureTink})
-                        .set<Player>({"Player 1"})
-                        .set<Velocity>({glm::vec2(0, 0)})
-                        .set<Collider>({glm::vec4(17, 7, 46, 57),
-                                        ColliderType::SOLID, false});
+  const auto Tink =
+      world.prefab("Tink")
+          .set<Transform2D>(
+              Transform2D(glm::vec2(300, 400), glm::vec2(1, 1), 0))
+          .set<AnimatedSprite>(AnimatedSprite(this->spritesheet, 0.15f))
+          .set<Player>({"Player 1"})
+          .set<Velocity>({glm::vec2(0, 0)})
+          .set<Collider>({glm::vec4(3, 7, 39, 39), ColliderType::SOLID, false});
 
   const auto Anya = world.prefab("Anya")
                         .set<Transform2D>(Transform2D(glm::vec2(150, 454),
@@ -117,8 +125,8 @@ int Game::init() {
   world.set<Gravity>({.value = 980.0f});
 
   // player movement + update camera
-  world.system<Player, Velocity, Sprite, Collider>().iter(
-      [](flecs::iter it, Player *p, Velocity *v, Sprite *s, Collider *c) {
+  world.system<Player, Velocity, Collider>().iter(
+      [](flecs::iter it, Player *p, Velocity *v, Collider *c) {
         const float speed = 200.0f;
         const float move_x = InputManager::GetAxisHorizontalMovement();
         const auto jump = InputManager::GetTriggerJump();
@@ -215,13 +223,12 @@ int Game::init() {
   });
   // update sprite batcher uniforms from camera and draw tilemap
   const auto playerQuery =
-      game->world
-          .query<Sprite, Transform2D, Player>(); // note this has to be declared
-                                                 // outside for emscripten
-  world.system<Camera>().each([playerQuery](Camera &c) {
-    playerQuery.each([&c](Sprite &s, Transform2D &t, Player &p) {
-      const auto rect = s.texture->GetTextureRect();
-      glm::vec2 offset = glm::vec2(rect.z, rect.w) / 2.0f;
+      game->world.query<Transform2D, Player>(); // note this has to be declared
+                                                // outside for emscripten
+
+  world.system<Camera>().each([playerQuery, playerRect](Camera &c) {
+    playerQuery.each([&c, playerRect](Transform2D &t, Player &p) {
+      glm::vec2 offset = glm::vec2(playerRect.z, playerRect.w) / 2.0f;
       c.position = t.position + offset;
     });
     game->spriteBatcher->UpdateCamera(c.position, game->tilemap->GetBounds());
@@ -234,6 +241,28 @@ int Game::init() {
   this->world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
     game->spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
   });
+
+  // render animated sprites
+  // @TODO: generalize this more,
+  // right now we are just forcing an animation for a specific sheet
+  this->world.system<Transform2D, AnimatedSprite>().each(
+      [](Transform2D &t, AnimatedSprite &s) {
+        if (s.currentFrame == 0) {
+          s.currentFrame = 14;
+        }
+        s.currentTime += game->world.delta_time();
+        if (s.currentTime >= s.frameTime) {
+          s.currentTime -= s.frameTime;
+          s.currentFrame++;
+          if (s.currentFrame > 17) {
+            s.currentFrame = 14;
+          }
+        }
+        game->spriteBatcher->Draw(
+            s.spriteSheet->GetTexture(), t.position, t.scale, t.rotation,
+            glm::vec4(1, 1, 1, 1),
+            s.spriteSheet->GetSpriteRectAsVec4(s.currentFrame));
+      });
 
   return 0;
 }

@@ -1,9 +1,10 @@
 #pragma once
-#include "flecs.h"
-#include "glm/glm.hpp"
-#include "texture.hpp"
+#include <flecs.h>
+#include <glm/glm.hpp>
 #include <memory>
+#include <spritesheet.hpp>
 #include <string>
+#include <texture.hpp>
 
 struct Transform2D {
   glm::vec2 position;
@@ -34,6 +35,19 @@ struct Transform2D {
 
 struct Sprite {
   std::shared_ptr<Texture> texture;
+};
+
+struct AnimatedSprite {
+  std::shared_ptr<SpriteSheet> spriteSheet;
+  float frameTime;
+  float currentTime;
+  int currentFrame;
+
+  AnimatedSprite(std::shared_ptr<SpriteSheet> spriteSheet, float frameTime)
+      : spriteSheet(spriteSheet), frameTime(frameTime), currentTime(0),
+        currentFrame(0) {}
+  AnimatedSprite()
+      : spriteSheet(nullptr), frameTime(0), currentTime(0), currentFrame(0) {}
 };
 
 struct Player {
