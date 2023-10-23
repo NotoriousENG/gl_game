@@ -9,7 +9,7 @@ I highly recommend setting your ide formatter to use clang format,
 - install clang format (use package manager on mac or linux), this is also installed as part of llvm on windows visual studio installer
   - on windows you may need to have llvm tools on your path
     - example: `C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\x64\bin`
-- run `py format.py` to format all cxx and hxx files in the project
+- run `py scripts/format.py` to format all cxx and hxx files in the project
 - you can also use your ide to format on file save, this is highly recommended
 
 ## Build for Multiple Platforms

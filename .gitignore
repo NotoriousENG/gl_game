@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/clion,cmake,visualstudio,visualstudiocode,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=clion,cmake,visualstudio,visualstudiocode,c++
 
+#project specific
+*_bounding.png
+
 #emscripten nonsense
 build/
 
