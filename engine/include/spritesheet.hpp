@@ -1,28 +1,47 @@
 #pragma once
 
-#include <SDL2/SDL.h>
 #include <glm/glm.hpp>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "texture.hpp"
 
+struct SpriteAnimation {
+  std::vector<int> frames;
+  float frameTime;
+  SpriteAnimation(std::vector<int> frames, float frameTime)
+      : frames(frames), frameTime(frameTime) {}
+  SpriteAnimation() : frames({0}), frameTime(0.0f) {}
+};
+
 class SpriteSheet {
 public:
-  SpriteSheet(const char *atlasPath, const char *texturePath);
+  SpriteSheet(const char *atlasPath);
   ~SpriteSheet();
 
   Texture *GetTexture();
 
-  const SDL_Rect GetSpriteRect(size_t index);
-
-  const glm::vec4 GetSpriteRectAsVec4(size_t index);
+  const glm::vec4 GetAtlasRect(size_t index);
 
   const size_t GetSpriteCount();
 
+  SpriteAnimation *GetAnimation(const char *name);
+
+  glm::vec4 GetAnimationRect(const SpriteAnimation *animation, size_t index);
+
 private:
-  const std::vector<SDL_Rect> loadAtlas(const char *atlasPath);
+  struct SpriteAtlas {
+    std::string texturePath;
+    std::unordered_map<std::string, SpriteAnimation> animations;
+    std::vector<glm::vec4> atlas;
+  };
+
+  void loadAtlas(const char *atlasPath);
 
   std::shared_ptr<Texture> texture;
-  std::vector<SDL_Rect> spriteRects;
+  std::vector<int> atlas;
+  size_t numRects;
+  std::unordered_map<std::string, SpriteAnimation> animations;
 };

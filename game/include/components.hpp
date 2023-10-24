@@ -39,15 +39,27 @@ struct Sprite {
 
 struct AnimatedSprite {
   std::shared_ptr<SpriteSheet> spriteSheet;
-  float frameTime;
   float currentTime;
   int currentFrame;
+  SpriteAnimation *currentAnimation;
 
-  AnimatedSprite(std::shared_ptr<SpriteSheet> spriteSheet, float frameTime)
-      : spriteSheet(spriteSheet), frameTime(frameTime), currentTime(0),
-        currentFrame(0) {}
+  void SetAnimation(SpriteAnimation *animation) {
+    if (this->currentAnimation == animation) {
+      return;
+    }
+    this->currentAnimation = animation;
+    this->currentFrame = 0;
+    this->currentTime = 0;
+  };
+
+  AnimatedSprite(std::shared_ptr<SpriteSheet> spriteSheet,
+                 SpriteAnimation *animation)
+      : spriteSheet(spriteSheet), currentTime(0), currentFrame(0),
+        currentAnimation(animation) {}
+
   AnimatedSprite()
-      : spriteSheet(nullptr), frameTime(0), currentTime(0), currentFrame(0) {}
+      : spriteSheet(nullptr), currentTime(0), currentFrame(0),
+        currentAnimation(nullptr) {}
 };
 
 struct Player {

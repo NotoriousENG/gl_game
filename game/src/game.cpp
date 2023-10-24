@@ -91,18 +91,17 @@ int Game::init() {
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   this->spritesheet =
-      std::make_shared<SpriteSheet>("assets/textures/spritesheet_atlas.json",
-                                    "assets/textures/spritesheet.png");
+      std::make_shared<SpriteSheet>("assets/textures/spritesheet.atlas");
 
-  const glm::vec4 playerRect =
-      sdlRectToVec4(this->spritesheet->GetSpriteRect(0));
+  const glm::vec4 playerRect = this->spritesheet->GetAtlasRect(0);
 
   // prefabs
   const auto Tink =
       world.prefab("Tink")
           .set<Transform2D>(
               Transform2D(glm::vec2(300, 400), glm::vec2(1, 1), 0))
-          .set<AnimatedSprite>(AnimatedSprite(this->spritesheet, 0.15f))
+          .set<AnimatedSprite>(AnimatedSprite(
+              this->spritesheet, this->spritesheet->GetAnimation("Idle")))
           .set<Player>({"Player 1"})
           .set<Velocity>({glm::vec2(0, 0)})
           .set<Collider>({glm::vec4(3, 7, 39, 39), ColliderType::SOLID, false});
@@ -125,16 +124,33 @@ int Game::init() {
   world.set<Gravity>({.value = 980.0f});
 
   // player movement + update camera
-  world.system<Player, Velocity, Collider>().iter(
-      [](flecs::iter it, Player *p, Velocity *v, Collider *c) {
+  world.system<Player, Velocity, Collider, AnimatedSprite, Transform2D>().iter(
+      [](flecs::iter it, Player *p, Velocity *v, Collider *c, AnimatedSprite *s,
+         Transform2D *t) {
         const float speed = 200.0f;
         const float move_x = InputManager::GetAxisHorizontalMovement();
         const auto jump = InputManager::GetTriggerJump();
         for (int i : it) {
+          const auto last_velocity = v[i].value;
           v[i].value.x = move_x * speed;
           if (c[i].isGrounded && jump) {
             v[i].value.y = -515.0f;
             c[i].isGrounded = false;
+          }
+          // update animations
+          if (!c[i].isGrounded) {
+            s[i].SetAnimation(game->spritesheet->GetAnimation("Jump"));
+          } else if (move_x != 0) {
+            s[i].SetAnimation(game->spritesheet->GetAnimation("Run"));
+          } else {
+            s[i].SetAnimation(game->spritesheet->GetAnimation("Idle"));
+          }
+          if (move_x != 0) {
+            if (move_x >= 0) {
+              t[i].scale.x = -1 * fabs(t[i].scale.x);
+            } else {
+              t[i].scale.x = fabs(t[i].scale.x);
+            }
           }
         }
       });
@@ -245,24 +261,21 @@ int Game::init() {
   // render animated sprites
   // @TODO: generalize this more,
   // right now we are just forcing an animation for a specific sheet
-  this->world.system<Transform2D, AnimatedSprite>().each(
-      [](Transform2D &t, AnimatedSprite &s) {
-        if (s.currentFrame == 0) {
-          s.currentFrame = 14;
-        }
-        s.currentTime += game->world.delta_time();
-        if (s.currentTime >= s.frameTime) {
-          s.currentTime -= s.frameTime;
-          s.currentFrame++;
-          if (s.currentFrame > 17) {
-            s.currentFrame = 14;
-          }
-        }
-        game->spriteBatcher->Draw(
-            s.spriteSheet->GetTexture(), t.position, t.scale, t.rotation,
-            glm::vec4(1, 1, 1, 1),
-            s.spriteSheet->GetSpriteRectAsVec4(s.currentFrame));
-      });
+  this->world.system<Transform2D, AnimatedSprite>().each([](Transform2D &t,
+                                                            AnimatedSprite &s) {
+    s.currentTime += game->world.delta_time();
+    if (s.currentTime >= s.currentAnimation->frameTime) {
+      s.currentTime -= s.currentAnimation->frameTime;
+      s.currentFrame++;
+      if (s.currentFrame >= s.currentAnimation->frames.size()) {
+        s.currentFrame = 0;
+      }
+    }
+    game->spriteBatcher->Draw(
+        s.spriteSheet->GetTexture(), t.position, t.scale, t.rotation,
+        glm::vec4(1, 1, 1, 1),
+        s.spriteSheet->GetAnimationRect(s.currentAnimation, s.currentFrame));
+  });
 
   return 0;
 }

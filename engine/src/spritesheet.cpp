@@ -3,50 +3,76 @@
 #include <nlohmann/json.hpp>
 #include <utils.hpp>
 
-SpriteSheet::SpriteSheet(const char *atlasPath, const char *texturePath) {
-  this->texture = std::make_shared<Texture>(texturePath);
-  this->spriteRects = this->loadAtlas(atlasPath);
-}
+SpriteSheet::SpriteSheet(const char *atlasPath) { this->loadAtlas(atlasPath); }
 
 SpriteSheet::~SpriteSheet() {}
 
 Texture *SpriteSheet::GetTexture() { return this->texture.get(); }
 
-const SDL_Rect SpriteSheet::GetSpriteRect(size_t index) {
+const glm::vec4 SpriteSheet::GetAtlasRect(size_t index) {
   // validate the index
-  if (index < 0 || index >= this->spriteRects.size()) {
+  if (index < 0 || index >= this->numRects) {
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                  "SpriteSheet::GetSpriteRect: index out of range");
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "index: %d", index);
-    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "spriteRects.size(): %d",
-                 this->spriteRects.size());
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "numRects: %d", this->numRects);
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                  "Returning spriteRects[0] instead");
-    return this->spriteRects[0];
+
+    return glm::vec4(this->atlas[0], this->atlas[1], this->atlas[2],
+                     this->atlas[3]);
   }
-  return this->spriteRects[index];
+  return glm::vec4(this->atlas[index * 4], this->atlas[index * 4 + 1],
+                   this->atlas[index * 4 + 2], this->atlas[index * 4 + 3]);
 }
 
-const glm::vec4 SpriteSheet::GetSpriteRectAsVec4(size_t index) {
-  return sdlRectToVec4(this->GetSpriteRect(index));
+const size_t SpriteSheet::GetSpriteCount() { return this->numRects; }
+
+SpriteAnimation *SpriteSheet::GetAnimation(const char *name) {
+  if (this->animations.find(name) != this->animations.end()) {
+    return &this->animations[name];
+  }
+  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+               "SpriteSheet::GetAnimation: animation not found");
+  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "animation name: %s", name);
+  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Returning empty animation");
+  return &this->animations["default"];
 }
 
-const size_t SpriteSheet::GetSpriteCount() { return this->spriteRects.size(); }
+glm::vec4 SpriteSheet::GetAnimationRect(const SpriteAnimation *animation,
+                                        size_t index) {
+  return this->GetAtlasRect(animation->frames[index]);
+}
 
-// the atlas is json, an array of objects with x, y, w, h (integers)
-// read into an vector of SDL_Rects
-const std::vector<SDL_Rect> SpriteSheet::loadAtlas(const char *atlasPath) {
+void SpriteSheet::loadAtlas(const char *atlasPath) {
   std::vector<SDL_Rect> rects;
   std::ifstream atlasFile(atlasPath);
   nlohmann::json atlasJson;
   atlasFile >> atlasJson;
-  for (auto &rect : atlasJson) {
-    SDL_Rect r;
-    r.x = rect["x"];
-    r.y = rect["y"];
-    r.w = rect["w"];
-    r.h = rect["h"];
-    rects.push_back(r);
+
+  // get the path (without file) from the atlas path
+  const std::string atlasPathStr = atlasPath;
+  const std::string atlasDir =
+      atlasPathStr.substr(0, atlasPathStr.find_last_of("/"));
+
+  // load the texture
+  const std::string texturePath = atlasJson["texture"];
+  const std::string textureFullPath = (atlasDir + "/" + texturePath).c_str();
+  this->texture = std::make_shared<Texture>(textureFullPath.c_str());
+  SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Texture loaded");
+
+  // load the atlas into memory as a single vector of ints
+  std::vector<int> temp = atlasJson["atlas"];
+  this->atlas = temp;
+  this->numRects = temp.size() / 4;
+
+  // load the animations
+  nlohmann::json animations = atlasJson["animations"];
+  for (auto &animation : animations.items()) {
+    const std::string name = animation.key();
+    const std::vector<int> frames = animation.value()["frames"];
+    float frameTime = animation.value()["frameTime"];
+    this->animations[name] = SpriteAnimation(frames, frameTime);
   }
-  return rects;
+  this->animations["default"] = SpriteAnimation({0}, 0.0f);
 }

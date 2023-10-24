@@ -155,6 +155,14 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
   // Calculate the vertex index offset for the current sprite
   const int vertexIndexOffset = this->vertices.size();
 
+  // @TODO: fix this for real
+  if (scale.x < 0) {
+    scaledBottomLeft.x += 38;
+    scaledBottomRight.x += 38;
+    scaledTopLeft.x += 38;
+    scaledTopRight.x += 38;
+  }
+
   // Add vertices to the list
   this->vertices.push_back(Vertex(scaledTopLeft, uvTopLeft, color));
   this->vertices.push_back(Vertex(scaledTopRight, uvTopRight, color));

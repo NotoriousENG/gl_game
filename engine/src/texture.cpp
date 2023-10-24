@@ -4,6 +4,7 @@
 
 Texture::Texture(const char *filename) {
   // Load image using SDL_image
+  SDL_Log("Loading texture: %s", filename);
   SDL_Surface *surface = IMG_Load(filename);
   this->w = surface->w;
   this->h = surface->h;
