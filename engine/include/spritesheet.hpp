@@ -11,9 +11,11 @@
 struct SpriteAnimation {
   std::vector<int> frames;
   float frameTime;
-  SpriteAnimation(std::vector<int> frames, float frameTime)
-      : frames(frames), frameTime(frameTime) {}
-  SpriteAnimation() : frames({0}), frameTime(0.0f) {}
+  glm::vec2 dimensions;
+  SpriteAnimation(std::vector<int> frames, float frameTime,
+                  glm::vec2 dimensions)
+      : frames(frames), frameTime(frameTime), dimensions(dimensions) {}
+  SpriteAnimation() : frames({0}), frameTime(0.0f), dimensions(glm::vec2(0)) {}
 };
 
 class SpriteSheet {

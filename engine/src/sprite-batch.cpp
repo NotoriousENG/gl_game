@@ -107,7 +107,8 @@ void SpriteBatch::UpdateCamera(glm::vec2 focalPoint, SDL_Rect tilemapBounds) {
 }
 
 void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
-                       float rotation, glm::vec4 color, glm::vec4 srcRect) {
+                       float rotation, glm::vec4 color, glm::vec4 srcRect,
+                       glm::vec2 flipPadding) {
 
   if (this->texture != texture) {
     this->Flush();
@@ -152,16 +153,22 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
   const glm::vec2 uvBottomRight((srcRect.x + srcRect.z) / textureWidth,
                                 (srcRect.y + srcRect.w) / textureHeight);
 
+  // dumb but works
+  if (scale.y < 0) {
+    scaledTopRight.y += flipPadding.y;
+    scaledBottomRight.y += flipPadding.y;
+    scaledBottomLeft.y += flipPadding.y;
+    scaledTopLeft.y += flipPadding.y;
+  }
+  if (scale.x < 0) {
+    scaledBottomLeft.x += flipPadding.x;
+    scaledBottomRight.x += flipPadding.x;
+    scaledTopRight.x += flipPadding.x;
+    scaledTopLeft.x += flipPadding.x;
+  }
+
   // Calculate the vertex index offset for the current sprite
   const int vertexIndexOffset = this->vertices.size();
-
-  // @TODO: fix this for real
-  if (scale.x < 0) {
-    scaledBottomLeft.x += 38;
-    scaledBottomRight.x += 38;
-    scaledTopLeft.x += 38;
-    scaledTopRight.x += 38;
-  }
 
   // Add vertices to the list
   this->vertices.push_back(Vertex(scaledTopLeft, uvTopLeft, color));

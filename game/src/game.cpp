@@ -261,21 +261,22 @@ int Game::init() {
   // render animated sprites
   // @TODO: generalize this more,
   // right now we are just forcing an animation for a specific sheet
-  this->world.system<Transform2D, AnimatedSprite>().each([](Transform2D &t,
-                                                            AnimatedSprite &s) {
-    s.currentTime += game->world.delta_time();
-    if (s.currentTime >= s.currentAnimation->frameTime) {
-      s.currentTime -= s.currentAnimation->frameTime;
-      s.currentFrame++;
-      if (s.currentFrame >= s.currentAnimation->frames.size()) {
-        s.currentFrame = 0;
-      }
-    }
-    game->spriteBatcher->Draw(
-        s.spriteSheet->GetTexture(), t.position, t.scale, t.rotation,
-        glm::vec4(1, 1, 1, 1),
-        s.spriteSheet->GetAnimationRect(s.currentAnimation, s.currentFrame));
-  });
+  this->world.system<Transform2D, AnimatedSprite>().each(
+      [](Transform2D &t, AnimatedSprite &s) {
+        s.currentTime += game->world.delta_time();
+        if (s.currentTime >= s.currentAnimation->frameTime) {
+          s.currentTime -= s.currentAnimation->frameTime;
+          s.currentFrame++;
+          if (s.currentFrame >= s.currentAnimation->frames.size()) {
+            s.currentFrame = 0;
+          }
+        }
+        game->spriteBatcher->Draw(
+            s.spriteSheet->GetTexture(), t.position, t.scale, t.rotation,
+            glm::vec4(1, 1, 1, 1),
+            s.spriteSheet->GetAnimationRect(s.currentAnimation, s.currentFrame),
+            s.currentAnimation->dimensions);
+      });
 
   return 0;
 }
