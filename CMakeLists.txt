@@ -18,6 +18,10 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     set(CMAKE_EXECUTABLE_SUFFIX .html)
 else()
     option(BUILD_SHARED_LIBS "Build shared libraries" ON) # when distributing, set to OFF
+    # if UNIX set -fPIC
+    if(UNIX)
+        set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    endif()
 endif()
 
 # log if we are building shared or static libraries
@@ -32,7 +36,11 @@ endif()
 if(BUILD_SHARED_LIBS)
   add_compile_definitions(SHARED_GAME=1)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}) # simplify testing for shared libs
-  set(GAME_LIBRARY_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  if (WIN32)
+    set(GAME_LIBRARY_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  else()
+    set(GAME_LIBRARY_PATH "${CMAKE_BINARY_DIR}/game/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  endif()
   add_compile_definitions(GAME_LIBRARY_PATH="${GAME_LIBRARY_PATH}")   # so we know where to hot reload from
 endif()
 
@@ -61,8 +69,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/engi
 target_link_libraries(${PROJECT_NAME} PUBLIC engine)
 
 # link game
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/game/include)
-target_link_libraries(${PROJECT_NAME} PUBLIC game)
+if (NOT BUILD_SHARED_LIBS)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/game/include)
+    target_link_libraries(${PROJECT_NAME} PUBLIC game)
+endif()
 
 # project includes
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/include")
