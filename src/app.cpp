@@ -49,7 +49,8 @@ void App::update() {
   this->renderer->Clear();
   this->poll_events();
 #ifdef SHARED_GAME
-  if (cr_plugin_changed(this->game_ctx)) { // full teardown needed on non windows
+  if (cr_plugin_changed(
+          this->game_ctx)) { // full teardown needed on non windows
     cr_plugin_close(this->game_ctx);
     cr_plugin_open(this->game_ctx, GAME_LIBRARY_PATH);
   }

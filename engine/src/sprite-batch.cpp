@@ -35,7 +35,7 @@ SpriteBatch::SpriteBatch(glm::vec2 windowSize) {
 
   this->textureUniform =
       glGetUniformLocation(this->shaderProgram, "albedoTexture");
-  this->texture = nullptr;
+  this->texture = NULL;
 
   // Create and bind a VAO
   glGenVertexArrays(1, &this->vao);
@@ -110,17 +110,24 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
                        float rotation, glm::vec4 color, glm::vec4 srcRect,
                        glm::vec2 flipPadding) {
 
-  if (this->texture != texture) {
+  if (this->texture != texture->GetGLTexture()) {
     this->Flush();
-    this->texture = texture;
+    this->texture = texture->GetGLTexture();
   }
 
-  const glm::ivec4 textureRect =
+  this->textureRect =
       texture != nullptr ? texture->GetTextureRect() : glm::ivec4(0, 0, 1, 1);
   if (srcRect == glm::vec4(0, 0, 0, 0)) {
-    srcRect = textureRect;
+    srcRect = this->textureRect;
   }
 
+  this->Draw(this->texture, position, scale, rotation, color, srcRect,
+             flipPadding);
+}
+
+void SpriteBatch::Draw(GLuint texture, glm::vec2 position, glm::vec2 scale,
+                       float rotation, glm::vec4 color, glm::vec4 srcRect,
+                       glm::vec2 flipPadding) {
   glm::vec2 center(position.x + (srcRect.z * scale.x) * 0.5f,
                    position.y + (srcRect.w * scale.y) * 0.5f);
 
@@ -141,8 +148,8 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
   scaledBottomLeft = rotationMatrix * scaledBottomLeft + center;
   scaledBottomRight = rotationMatrix * scaledBottomRight + center;
 
-  const float textureWidth = textureRect.z;
-  const float textureHeight = textureRect.w;
+  const float textureWidth = this->textureRect.z;
+  const float textureHeight = this->textureRect.w;
 
   const glm::vec2 uvTopLeft(srcRect.x / textureWidth,
                             srcRect.y / textureHeight);
@@ -188,9 +195,9 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
 
 void SpriteBatch::DrawRect(glm::vec4 destRect, glm::vec4 color) {
 
-  if (this->texture != nullptr) {
+  if (this->texture != NULL) {
     this->Flush();
-    this->texture = nullptr;
+    this->texture = NULL;
   }
 
   const int vertexIndexOffset = this->vertices.size();
@@ -231,7 +238,7 @@ void SpriteBatch::Flush() {
 
   GLuint whiteTexture;
 
-  if (this->texture == nullptr) {
+  if (this->texture == NULL) {
     // If the texture is undefined, bind a 1x1 white texture
     glGenTextures(1, &whiteTexture);
     glBindTexture(GL_TEXTURE_2D, whiteTexture);
@@ -241,7 +248,7 @@ void SpriteBatch::Flush() {
     glUniform1i(this->textureUniform, 0);
   } else {
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, this->texture->GetGLTexture());
+    glBindTexture(GL_TEXTURE_2D, this->texture);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glUniform1i(this->textureUniform, 0);
@@ -281,7 +288,7 @@ void SpriteBatch::Flush() {
   glBindVertexArray(0);                     // Unbind the VAO
   this->vertices.clear();
   this->indices.clear();
-  if (this->texture == nullptr) {
+  if (this->texture == NULL) {
     // Delete the temporary white texture if it was created
     glDeleteTextures(1, &whiteTexture);
   }
@@ -293,4 +300,10 @@ void SpriteBatch::SetProjection(glm::vec2 windowSize) {
   this->windowSize = windowSize;
   this->projection =
       glm::ortho(0.0f, this->windowSize.x, this->windowSize.y, 0.0f);
+}
+
+void SpriteBatch::SetTextureAndDimensions(GLuint texture, const int w,
+                                          const int h) {
+  this->texture = texture;
+  this->textureRect = glm::ivec4(0, 0, w, h);
 }

@@ -9,6 +9,8 @@ project ("game")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(COPY_GAME_ASSETS "Copy assets to build directory" ON) # when prototyping, set to OFF
+
 # project includes
 include_directories(include)
 
@@ -31,14 +33,19 @@ else()
     set(FINAL_BINARY_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif()
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  add_custom_target(copy_assets
-          COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${FINAL_BINARY_DIR}/assets
-      )
-  add_dependencies(${PROJECT_NAME} copy_assets)
-else()
-  add_custom_target(copy_assets
-          COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${CMAKE_CURRENT_BINARY_DIR}/../assets
-      )
-  add_dependencies(${PROJECT_NAME} copy_assets)
+if (COPY_GAME_ASSETS)
+  # copy assets to the build directory
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+    add_custom_target(copy_assets
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${FINAL_BINARY_DIR}/assets
+            # log the command so it is visible in the build output
+            COMMAND ${CMAKE_COMMAND} -E echo "copying assets to ${FINAL_BINARY_DIR}/assets"
+        )
+    add_dependencies(${PROJECT_NAME} copy_assets)
+  else()
+    add_custom_target(copy_assets
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../assets ${CMAKE_CURRENT_BINARY_DIR}/../assets
+        )
+    add_dependencies(${PROJECT_NAME} copy_assets)
+  endif()
 endif()

@@ -81,7 +81,7 @@ void Game::push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
 
 int Game::init() {
   SDL_Log("Game init");
-  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Anya's World");
+  SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Tink's World");
   // Get current window size
   int w, h;
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
@@ -92,6 +92,8 @@ int Game::init() {
 
   this->spritesheet =
       std::make_shared<SpriteSheet>("assets/textures/spritesheet.atlas");
+
+  this->font = std::make_unique<Font>("assets/fonts/Vera.ttf", 32);
 
   const glm::vec4 playerRect = this->spritesheet->GetAtlasRect(0);
 
@@ -307,6 +309,12 @@ int Game::update() {
     });
     this->tilemap->DrawColliders(this->spriteBatcher.get());
   }
+
+  this->spriteBatcher->Flush();
+
+  this->font->RenderText(this->spriteBatcher.get(), "Hello World",
+                         glm::vec2(40, 300), glm::vec2(1, 1),
+                         glm::vec4(1, 1, 1, 1));
 
   // draw all sprites in the batch
   this->spriteBatcher->Flush();
