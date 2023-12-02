@@ -14,7 +14,7 @@
 
 #define ASCII_OFFSET 32
 #define ASCII_MAX 126
-#define ASCII_COUNT (ASCII_MAX - ASCII_OFFSET)
+#define ASCII_EXTENDED_MAX 255
 
 #ifndef GAME_NAME
 #define GAME_NAME "Add Game Name to CMakeLists.txt"

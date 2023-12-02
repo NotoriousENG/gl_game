@@ -312,9 +312,9 @@ int Game::update() {
 
   this->spriteBatcher->Flush();
 
-  this->font->RenderText(this->spriteBatcher.get(), "Hello World",
-                         glm::vec2(40, 300), glm::vec2(1, 1),
-                         glm::vec4(1, 1, 1, 1));
+  this->font->RenderText(this->spriteBatcher.get(), "Anya's World",
+                         glm::vec2(0, 0), glm::vec2(1, 1),
+                         glm::vec4(1, 0, 1, 1));
 
   // draw all sprites in the batch
   this->spriteBatcher->Flush();

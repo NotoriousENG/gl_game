@@ -11,6 +11,8 @@
 
 #include "sprite-batch.hpp"
 
+#include <unordered_map>
+
 struct Glyph {
   glm::vec2 offset;
   glm::ivec2 size;
@@ -25,9 +27,11 @@ public:
                   glm::vec2 scale, glm::vec4 color);
 
 private:
-  long font_height;
+  int fontSize;
+  long max_height;
 
-  Glyph glyphs[ASCII_COUNT];
+  std::unordered_map<char, Glyph> glyphs;
 
   GLuint tex;
+  const int texDim = 512;
 };
