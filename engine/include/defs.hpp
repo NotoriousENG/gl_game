@@ -16,6 +16,8 @@
 #define ASCII_MAX 126
 #define ASCII_EXTENDED_MAX 255
 
+#define TEXT_BUFFER_SIZE 256
+
 #ifndef GAME_NAME
 #define GAME_NAME "Add Game Name to CMakeLists.txt"
 #endif

@@ -23,7 +23,7 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
   case CR_LOAD:
     loaded_timestamp = SDL_GetTicks();
     game = new Game();
-    game->init();
+    game->init((SharedData *)ctx->userdata);
     return printf("loaded %i\n", loaded_timestamp);
   case CR_UNLOAD:
     game->unload();
@@ -79,9 +79,13 @@ void Game::push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
   }
 }
 
-int Game::init() {
+int Game::init(SharedData *shared_data) {
   SDL_Log("Game init");
   SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Tink's World");
+
+  // map the text_input_buffer
+  InputManager::SetTextInputBuffer(&shared_data->text_input_buffer[0]);
+
   // Get current window size
   int w, h;
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
@@ -292,6 +296,10 @@ int Game::update() {
     this->drawColliders = !this->drawColliders;
   };
 
+  if (InputManager::GetKey(SDL_SCANCODE_RETURN).IsJustPressed()) {
+    InputManager::ToggleTextInput();
+  };
+
   this->world.progress();
 
   if (this->drawColliders) {
@@ -312,9 +320,9 @@ int Game::update() {
 
   this->spriteBatcher->Flush();
 
-  this->font->RenderText(this->spriteBatcher.get(), "Anya's World",
-                         glm::vec2(0, 0), glm::vec2(1, 1),
-                         glm::vec4(1, 0, 1, 1));
+  this->font->RenderText(this->spriteBatcher.get(),
+                         InputManager::GetTextInputBuffer(), glm::vec2(0, 0),
+                         glm::vec2(1, 1), glm::vec4(1, 0, 1, 1));
 
   // draw all sprites in the batch
   this->spriteBatcher->Flush();

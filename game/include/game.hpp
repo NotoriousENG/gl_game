@@ -4,6 +4,7 @@
 #include <components.hpp>
 #include <font.hpp>
 #include <memory>
+#include <shared-data.hpp>
 #include <sprite-batch.hpp>
 #include <spritesheet.hpp>
 #include <texture.hpp>
@@ -13,7 +14,7 @@ class Game {
 public:
   Game();
   ~Game();
-  int init();
+  int init(SharedData *shared_data);
   int update();
   int unload();
   int close();

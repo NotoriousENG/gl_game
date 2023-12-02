@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 
+#include <shared-data.hpp>
+
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
 #include <emscripten/html5.h>
@@ -16,7 +18,11 @@ static App *app_instance;
 void emscripten_update() { app_instance->update(); }
 #endif
 
-App::App() { this->is_running = true; }
+App::App() {
+  this->is_running = true;
+  // memset clear the shared data buffer
+  memset(&this->shared_data, 0, sizeof(this->shared_data));
+}
 
 App::~App() {}
 
@@ -27,10 +33,13 @@ void App::run() {
                                           initial_window_size.y);
   this->renderer = std::make_unique<Renderer>(this->window.get());
 
+  SDL_StopTextInput(); // ensure this is off by default
+
 #ifdef SHARED_GAME
   cr_plugin_open(this->game_ctx, GAME_LIBRARY_PATH);
+  this->game_ctx.userdata = &this->shared_data;
 #else
-  this->game.init();
+  this->game.init(&this->shared_data);
 #endif
 
 #ifdef EMSCRIPTEN
@@ -79,8 +88,23 @@ void App::onClose() {
 void App::poll_events() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
-    if (event.type == SDL_QUIT) {
+    switch (event.type) {
+    case SDL_QUIT:
       this->is_running = false;
+      break;
+    case SDL_KEYDOWN:
+      if (event.key.keysym.sym == SDLK_BACKSPACE &&
+          strlen(this->shared_data.text_input_buffer) > 0) {
+        this->shared_data
+            .text_input_buffer[strlen(this->shared_data.text_input_buffer) -
+                               1] = '\0';
+      }
+      break;
+    case SDL_TEXTINPUT:
+      strcat(this->shared_data.text_input_buffer, event.text.text);
+      break;
+    default:
+      break;
     }
   }
 }

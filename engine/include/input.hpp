@@ -35,6 +35,10 @@ private:
   float axis_vertical_movement = 0.0f;   // (W || ←) to (S || →)
   float axis_horizontal_movement = 0.0f; // (A || ↑) to (D || ↓)
 
+  bool use_text_input = false;
+
+  const char *text_input_buffer = "";
+
 public:
   static void Update(const uint8_t *key_state, const int num_keys);
 
@@ -49,4 +53,12 @@ public:
   static float GetAxisHorizontalMovement();
 
   static bool GetTriggerJump();
+
+  static void ToggleTextInput();
+
+  static const char *GetTextInputBuffer();
+
+  static void SetTextInputBuffer(const char *text);
+
+  static bool IsTextInputActive();
 };
