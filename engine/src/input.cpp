@@ -5,24 +5,24 @@ static std::unique_ptr<InputManager> instance =
 
 void InputManager::Update(const uint8_t *key_state, const int num_keys) {
   std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
+
   for (int i = 0; i < num_keys; i++) {
-    // get the name of this key
-    const char *key_name =
-        SDL_GetKeyName(SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(i)));
+
+    // ignore other input if text input is active
+    if (instance->use_text_input && i != SDL_SCANCODE_RETURN) {
+      continue;
+    }
 
     // set released, pressed, just_released, just_pressed
     if (key_state[i]) {
       if (instance->key_map[i] == InputStates::RELEASED) {
         instance->key_map[i] = InputStates::JUST_PRESSED;
-        // SDL_Log("%s (%i): JUST_PRESSED", key_name, i);
       } else {
         instance->key_map[i] = InputStates::HELD;
-        // SDL_Log("%s (%i): HELD", key_name, i);
       }
     } else {
       if (instance->key_map[i] == InputStates::HELD) {
         instance->key_map[i] = InputStates::JUST_RELEASED;
-        // SDL_Log("%s (%i): JUST_RELEASED", key_name, i);
       } else {
         instance->key_map[i] = InputStates::RELEASED;
       }
@@ -80,4 +80,29 @@ bool InputManager::GetTriggerJump() {
   std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
   return instance->key_map[SDL_SCANCODE_SPACE].IsJustPressed() ||
          instance->key_map[SDL_SCANCODE_LALT].IsJustPressed();
+}
+
+void InputManager::ToggleTextInput() {
+  std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
+  if (instance->use_text_input) {
+    SDL_StopTextInput();
+  } else {
+    SDL_StartTextInput();
+  }
+  instance->use_text_input = !instance->use_text_input;
+}
+
+const char *InputManager::GetTextInputBuffer() {
+  std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
+  return instance->text_input_buffer;
+}
+
+void InputManager::SetTextInputBuffer(const char *text) {
+  std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
+  instance->text_input_buffer = text;
+}
+
+bool InputManager::IsTextInputActive() {
+  std::lock_guard<std::mutex> lock(instance->mtx); // thread safety
+  return instance->use_text_input;
 }
