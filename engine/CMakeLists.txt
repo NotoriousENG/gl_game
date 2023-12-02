@@ -21,7 +21,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     find_package(SDL2 REQUIRED)
     find_package(sdl2-mixer REQUIRED)
     find_package(sdl2-image REQUIRED)
-    find_package(sdl2-ttf REQUIRED)
+    find_package(Freetype REQUIRED)
 endif()
 
 # add subdirectories
@@ -39,7 +39,7 @@ include_directories(include)
 
 # add the library
 add_library (${PROJECT_NAME} STATIC "src/renderer.cpp" "src/window.cpp" "src/input.cpp" "src/shader.cpp" 
-    "src/texture.cpp" "src/sprite-batch.cpp" "src/tilemap.cpp" "src/spritesheet.cpp")
+    "src/texture.cpp" "src/sprite-batch.cpp" "src/tilemap.cpp" "src/spritesheet.cpp" "src/font.cpp")
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_subdirectory(lib/datachannel-wasm)
@@ -75,3 +75,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_IMAGE_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_MIXER_LIBRARIES}) # ensure sdl2-mixer "extensions" are installed for .ogg: https://www.reddit.com/r/cataclysmdda/comments/glxgtb/fix_for_sound_problem_when_compiling_in_windows/
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_TTF_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})

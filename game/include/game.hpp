@@ -2,6 +2,7 @@
 
 #include "flecs.h"
 #include <components.hpp>
+#include <font.hpp>
 #include <memory>
 #include <sprite-batch.hpp>
 #include <spritesheet.hpp>
@@ -28,6 +29,8 @@ public:
 
   std::unique_ptr<Tilemap> tilemap;
   flecs::world world;
+
+  std::unique_ptr<Font> font;
 
   bool drawColliders = false;
 };

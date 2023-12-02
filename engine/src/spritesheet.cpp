@@ -14,8 +14,8 @@ const glm::vec4 SpriteSheet::GetAtlasRect(size_t index) {
   if (index < 0 || index >= this->numRects) {
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                  "SpriteSheet::GetSpriteRect: index out of range");
-    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "index: %d", index);
-    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "numRects: %d", this->numRects);
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "index: %zu", index);
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "numRects: %zu", this->numRects);
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                  "Returning spriteRects[0] instead");
 

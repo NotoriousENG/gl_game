@@ -29,10 +29,18 @@ public:
             glm::vec4 srcRect = glm::vec4(0, 0, 0, 0),
             glm::vec2 flipPadding = glm::vec2(0, 0));
 
+  void Draw(GLuint texture, glm::vec2 position,
+            glm::vec2 scale = glm::vec2(1, 1), float rotation = 0.0f,
+            glm::vec4 color = glm::vec4(1, 1, 1, 1),
+            glm::vec4 srcRect = glm::vec4(0, 0, 0, 0),
+            glm::vec2 flipPadding = glm::vec2(0, 0));
+
   void DrawRect(glm::vec4 destRect, glm::vec4 color = glm::vec4(1, 1, 1, 1));
   void Flush();
 
   void SetProjection(glm::vec2 windowSize);
+
+  void SetTextureAndDimensions(GLuint texture, const int w, const int h);
 
 private:
   std::vector<Vertex> vertices;
@@ -48,7 +56,8 @@ private:
 
   GLuint shaderProgram;
 
-  Texture *texture;
+  GLuint texture;
+  glm::ivec4 textureRect;
   GLuint textureUniform;
 
   glm::mat4 projection;
