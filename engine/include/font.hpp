@@ -3,8 +3,7 @@
 
 #include "defs.hpp"
 
-#include <freetype/freetype.h>
-#include <freetype/ftglyph.h>
+#include FT_FREETYPE_H
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>

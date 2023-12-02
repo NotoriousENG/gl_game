@@ -32,7 +32,8 @@ Font::Font(const char *path, int size) {
   int row = 0;
   int col = padding;
 
-  char texData[this->texDim * this->texDim * 4] = {0};
+  char texData[this->texDim * this->texDim * 4];
+  memset(texData, 0, sizeof(texData)); // VLAs can't be initialized in em++ :/
 
   // Load glyphs from the ASCII set (ASCII 32 - 126)
   for (FT_ULong ascii = ASCII_OFFSET; ascii <= ASCII_EXTENDED_MAX; ++ascii) {
