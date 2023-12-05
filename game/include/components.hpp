@@ -10,12 +10,15 @@ struct Transform2D {
   glm::vec2 position;
   glm::vec2 scale;
   float rotation;
+  glm::vec2 global_position;
 
   Transform2D(glm::vec2 position, glm::vec2 scale, float rotation)
-      : position(position), scale(scale), rotation(rotation) {}
+      : position(position), scale(scale), rotation(rotation),
+        global_position(position) {}
 
   Transform2D()
-      : position(glm::vec2(0, 0)), scale(glm::vec2(1, 1)), rotation(0) {}
+      : position(glm::vec2(0, 0)), scale(glm::vec2(1, 1)), rotation(0),
+        global_position(position) {}
 
   Transform2D WithPosition(glm::vec2 position) {
     this->position = position;
@@ -42,6 +45,7 @@ struct AnimatedSprite {
   float currentTime;
   int currentFrame;
   SpriteAnimation *currentAnimation;
+  bool isAnimationFinished;
 
   void SetAnimation(SpriteAnimation *animation) {
     if (this->currentAnimation == animation) {
@@ -50,12 +54,13 @@ struct AnimatedSprite {
     this->currentAnimation = animation;
     this->currentFrame = 0;
     this->currentTime = 0;
+    this->isAnimationFinished = false;
   };
 
   AnimatedSprite(std::shared_ptr<SpriteSheet> spriteSheet,
                  SpriteAnimation *animation)
       : spriteSheet(spriteSheet), currentTime(0), currentFrame(0),
-        currentAnimation(animation) {}
+        currentAnimation(animation), isAnimationFinished(false) {}
 
   AnimatedSprite()
       : spriteSheet(nullptr), currentTime(0), currentFrame(0),
@@ -64,19 +69,22 @@ struct AnimatedSprite {
 
 struct Player {
   std::string name;
+  bool isAttacking; // @TODO move to child collider
 };
 
 struct Camera {
   glm::vec2 position;
 };
 
-enum class ColliderType { TRIGGER, SOLID };
+enum class ColliderType { TRIGGER, SOLID, HURTBOX };
 
 struct Collider {
   // collider vertices
   glm::vec4 vertices;
   ColliderType type;
   bool isGrounded;
+  bool flipX;
+  bool active;
 };
 
 struct Velocity {

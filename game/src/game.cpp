@@ -104,13 +104,13 @@ int Game::init(SharedData *shared_data) {
   // prefabs
   const auto Tink =
       world.prefab("Tink")
-          .set<Transform2D>(
-              Transform2D(glm::vec2(300, 400), glm::vec2(1, 1), 0))
+          .set<Transform2D>(Transform2D(glm::vec2(80, 400), glm::vec2(1, 1), 0))
           .set<AnimatedSprite>(AnimatedSprite(
               this->spritesheet, this->spritesheet->GetAnimation("Idle")))
-          .set<Player>({"Player 1"})
+          .set<Player>({"Player 1", false})
           .set<Velocity>({glm::vec2(0, 0)})
-          .set<Collider>({glm::vec4(3, 7, 39, 39), ColliderType::SOLID, false});
+          .set<Collider>(
+              {glm::vec4(3, 7, 39, 39), ColliderType::SOLID, false, false});
 
   const auto Anya = world.prefab("Anya")
                         .set<Transform2D>(Transform2D(glm::vec2(150, 454),
@@ -118,13 +118,29 @@ int Game::init(SharedData *shared_data) {
                         .set<Sprite>({this->textureAnya})
                         .set<Velocity>({glm::vec2(0, 0)})
                         .set<Collider>({glm::vec4(17, 7, 46, 57),
-                                        ColliderType::SOLID, false});
+                                        ColliderType::SOLID, false, false});
 
   // create anya
+  // add 1 anya per 64 units on x
+  std::string anya_name = "anya";
+  for (int i = 0; i < 10; i++) {
+    world.entity((anya_name + std::to_string(i)).c_str())
+        .is_a(Anya)
+        .set<Transform2D>(
+            Transform2D(glm::vec2(150 + (64 * i), 454), glm::vec2(1, 1), 0));
+  }
   const auto anya = world.entity("anya").is_a(Anya);
 
   // create tink
   const auto player = world.entity("player").is_a(Tink);
+
+  // add hurtbox as a child of tink
+  const auto hurtbox =
+      world.entity("hurtbox")
+          .child_of(player)
+          .set<Transform2D>(Transform2D(glm::vec2(30, 0), glm::vec2(1, 1), 0))
+          .set<Collider>(
+              {glm::vec4(3, 7, 10, 48), ColliderType::HURTBOX, false, false});
 
   world.set<Camera>({.position = glm::vec2(0, 0)});
   world.set<Gravity>({.value = 980.0f});
@@ -136,13 +152,55 @@ int Game::init(SharedData *shared_data) {
         const float speed = 200.0f;
         const float move_x = InputManager::GetAxisHorizontalMovement();
         const auto jump = InputManager::GetTriggerJump();
+        const auto attack =
+            InputManager::GetKey(SDL_SCANCODE_LCTRL).IsJustPressed();
+
         for (int i : it) {
+          if (!s[i].isAnimationFinished && !s[i].currentAnimation->loop) {
+            return; // the attack animation drives velocity for now
+          }
+
+          p->isAttacking = false;
+
+          const auto h = it.entity(0).lookup("hurtbox");
+          auto hc = h.get_mut<Collider>();
+          auto ht = h.get_mut<Transform2D>();
+          hc->active = false;
+
           const auto last_velocity = v[i].value;
           v[i].value.x = move_x * speed;
           if (c[i].isGrounded && jump) {
             v[i].value.y = -515.0f;
             c[i].isGrounded = false;
           }
+
+          if (move_x != 0) {
+            if (move_x > 0) {
+              t[i].scale.x = -1 * fabs(t[i].scale.x);
+              c[i].flipX = false;
+              ht->position.x = 30;
+            } else if (move_x < 0) {
+              t[i].scale.x = fabs(t[i].scale.x);
+              c[i].flipX = true;
+              ht->position.x = -30;
+            }
+          }
+
+          if (c[i].isGrounded && attack) {
+            p->isAttacking = true;
+            s[i].SetAnimation(game->spritesheet->GetAnimation("Attack"));
+            const float attack_x_vel = 215.0f;
+            if (c[i].flipX) {
+              v[i].value.x = -1 * attack_x_vel;
+            } else {
+              v[i].value.x = attack_x_vel;
+            }
+            v[i].value.y = -315.0f;
+            c[i].isGrounded = false;
+            hc->active = true;
+            return;
+          }
+
           // update animations
           if (!c[i].isGrounded) {
             s[i].SetAnimation(game->spritesheet->GetAnimation("Jump"));
@@ -150,13 +208,6 @@ int Game::init(SharedData *shared_data) {
             s[i].SetAnimation(game->spritesheet->GetAnimation("Run"));
           } else {
             s[i].SetAnimation(game->spritesheet->GetAnimation("Idle"));
-          }
-          if (move_x != 0) {
-            if (move_x >= 0) {
-              t[i].scale.x = -1 * fabs(t[i].scale.x);
-            } else {
-              t[i].scale.x = fabs(t[i].scale.x);
-            }
           }
         }
       });
@@ -217,8 +268,8 @@ int Game::init(SharedData *shared_data) {
                                                          Transform2D &t1,
                                                          Collider &c1,
                                                          Player &p1) {
-    collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
-                                        Collider &c2) {
+    collisionQuery.each([p1, &e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
+                                            Collider &c2) {
       if (e1.id() == e2.id()) {
         return;
       }
@@ -232,6 +283,10 @@ int Game::init(SharedData *shared_data) {
                               static_cast<int>(c2.vertices.w - c2.vertices.y)};
 
       if (SDL_HasIntersection(&rect1, &rect2)) {
+        if (p1.isAttacking) {
+          e2.destruct();
+          return;
+        }
         game->push_rect_transform(rect1, rect2, t1, c1);
       }
 
@@ -261,7 +316,19 @@ int Game::init(SharedData *shared_data) {
   });
   // render sprites
   this->world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
-    game->spriteBatcher->Draw(s.texture.get(), t.position, t.scale, t.rotation);
+    game->spriteBatcher->Draw(s.texture.get(), t.global_position, t.scale,
+                              t.rotation);
+  });
+
+  // update global positions for children
+  world.system<Transform2D>().each([](flecs::entity e, Transform2D &t) {
+    const auto parent = e.parent();
+    if (parent) {
+      const auto parent_t = parent.get<Transform2D>();
+      t.global_position = t.position + parent_t->global_position;
+    } else {
+      t.global_position = t.position;
+    }
   });
 
   // render animated sprites
@@ -270,15 +337,21 @@ int Game::init(SharedData *shared_data) {
   this->world.system<Transform2D, AnimatedSprite>().each(
       [](Transform2D &t, AnimatedSprite &s) {
         s.currentTime += game->world.delta_time();
-        if (s.currentTime >= s.currentAnimation->frameTime) {
+        if (!s.isAnimationFinished &&
+            s.currentTime >= s.currentAnimation->frameTime) {
           s.currentTime -= s.currentAnimation->frameTime;
           s.currentFrame++;
           if (s.currentFrame >= s.currentAnimation->frames.size()) {
+            if (!s.currentAnimation->loop) {
+              s.isAnimationFinished = true;
+              s.currentFrame--;
+              return;
+            }
             s.currentFrame = 0;
           }
         }
         game->spriteBatcher->Draw(
-            s.spriteSheet->GetTexture(), t.position, t.scale, t.rotation,
+            s.spriteSheet->GetTexture(), t.global_position, t.scale, t.rotation,
             glm::vec4(1, 1, 1, 1),
             s.spriteSheet->GetAnimationRect(s.currentAnimation, s.currentFrame),
             s.currentAnimation->dimensions);
@@ -304,17 +377,26 @@ int Game::update() {
 
   if (this->drawColliders) {
     // Draw colliders
-    world.query<Transform2D, Collider>().each([](flecs::entity e,
-                                                 Transform2D &t, Collider &c) {
-      // the rect is the vertices with the position offset
-      const auto rect = c.vertices + glm::vec4(t.position.x, t.position.y,
-                                               -c.vertices.x, -c.vertices.y);
-      const auto color = c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
-                                      : (game->tilemap->HasCollision(e)
-                                             ? glm::vec4(0, 1, 0, 0.5f)
-                                             : glm::vec4(0, 0, 1, 0.5f));
-      game->spriteBatcher->DrawRect(rect, color);
-    });
+    world.query<Transform2D, Collider>().each(
+        [](flecs::entity e, Transform2D &t, Collider &c) {
+          // the rect is the vertices with the position offset
+          const auto rect =
+              c.vertices + glm::vec4(t.global_position.x, t.global_position.y,
+                                     -c.vertices.x, -c.vertices.y);
+          auto color = c.isGrounded ? glm::vec4(1, 0, 0, 0.5f)
+                                    : (game->tilemap->HasCollision(e)
+                                           ? glm::vec4(0, 1, 0, 0.5f)
+                                           : glm::vec4(0, 0, 1, 0.5f));
+          if (c.type == ColliderType::HURTBOX) {
+            if (c.active) {
+              color = glm::vec4(1, 1, 0, 0.5f);
+            } else {
+              color = glm::vec4(0, 0, 0, 0.5f);
+            }
+          }
+
+          game->spriteBatcher->DrawRect(rect, color);
+        });
     this->tilemap->DrawColliders(this->spriteBatcher.get());
   }
 
