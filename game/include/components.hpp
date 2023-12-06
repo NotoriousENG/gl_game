@@ -76,15 +76,25 @@ struct Camera {
   glm::vec2 position;
 };
 
-enum class ColliderType { TRIGGER, SOLID, HURTBOX };
-
-struct Collider {
-  // collider vertices
-  glm::vec4 vertices;
-  ColliderType type;
+struct Groundable {
   bool isGrounded;
-  bool flipX;
+};
+
+struct CollisionVolume {
+  glm::vec4 vertices;
+};
+
+struct PhysicsBody {};
+
+struct StaticBody {};
+
+struct Hurtbox {
+  float damage;
   bool active;
+};
+
+struct Health {
+  float value;
 };
 
 struct Velocity {

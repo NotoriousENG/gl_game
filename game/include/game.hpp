@@ -20,7 +20,7 @@ public:
   int close();
 
   void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
-                           Transform2D &t1, Collider &c1);
+                           Transform2D &t1, CollisionVolume &c1);
 
   std::unique_ptr<SpriteBatch> spriteBatcher;
   std::shared_ptr<Texture> textureTink;
