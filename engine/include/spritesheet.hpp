@@ -12,9 +12,11 @@ struct SpriteAnimation {
   std::vector<int> frames;
   float frameTime;
   glm::vec2 dimensions;
+  bool loop;
   SpriteAnimation(std::vector<int> frames, float frameTime,
-                  glm::vec2 dimensions)
-      : frames(frames), frameTime(frameTime), dimensions(dimensions) {}
+                  glm::vec2 dimensions, bool loop)
+      : frames(frames), frameTime(frameTime), dimensions(dimensions),
+        loop(loop) {}
   SpriteAnimation() : frames({0}), frameTime(0.0f), dimensions(glm::vec2(0)) {}
 };
 

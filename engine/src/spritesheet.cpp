@@ -71,16 +71,18 @@ void SpriteSheet::loadAtlas(const char *atlasPath) {
   for (auto &animation : animations.items()) {
     const std::string name = animation.key();
     const std::vector<int> frames = animation.value()["frames"];
-    float frameTime = animation.value()["frameTime"];
+    const float frameTime = animation.value()["frameTime"];
+    const bool loop = animation.value()["loop"];
 
     // get the wh (dimensions) of the first frame
 
     const glm::vec4 rect = this->GetAtlasRect(frames[0]);
     const glm::vec2 dimensions = glm::vec2(rect.z, rect.w);
 
-    this->animations[name] = SpriteAnimation(frames, frameTime, dimensions);
+    this->animations[name] =
+        SpriteAnimation(frames, frameTime, dimensions, loop);
   }
   const glm::vec4 rect = this->GetAtlasRect(0);
   const glm::vec2 dimensions = glm::vec2(rect.z, rect.w);
-  this->animations["default"] = SpriteAnimation({0}, 0.0f, dimensions);
+  this->animations["default"] = SpriteAnimation({0}, 0.0f, dimensions, false);
 }

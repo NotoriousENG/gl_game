@@ -10,6 +10,15 @@
 #include <texture.hpp>
 #include <tilemap.hpp>
 
+struct CollisionEvent {
+  flecs::entity entity1;
+  flecs::entity entity2;
+  Transform2D *transform1;
+  Transform2D *transform2;
+  CollisionVolume *collisionVolume1;
+  CollisionVolume *collisionVolume2;
+};
+
 class Game {
 public:
   Game();
@@ -20,7 +29,7 @@ public:
   int close();
 
   void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
-                           Transform2D &t1, Collider &c1);
+                           Transform2D &t1, CollisionVolume &c1);
 
   std::unique_ptr<SpriteBatch> spriteBatcher;
   std::shared_ptr<Texture> textureTink;

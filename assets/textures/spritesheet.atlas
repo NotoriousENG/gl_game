@@ -14,14 +14,16 @@
                 31,
                 32
             ],
-            "frameTime": 0.2
+            "frameTime": 0.2,
+            "loop": true
         },
         "Walk": {
             "frames": [
                 5,
                 6
             ],
-            "frameTime": 0.2
+            "frameTime": 0.2,
+            "loop": true
         },
         "Run": {
             "frames": [
@@ -29,13 +31,22 @@
                 16,
                 17
             ],
-            "frameTime": 0.2
+            "frameTime": 0.2,
+            "loop": true
         },
         "Jump": {
             "frames": [
                 14
             ],
-            "frameTime": 0.2
+            "frameTime": 0.2,
+            "loop": true
+        },
+        "Attack": {
+            "frames": [
+                22
+            ],
+            "frameTime": 0.6,
+            "loop": false
         }
     },
     "atlas": [
