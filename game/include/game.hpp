@@ -10,6 +10,15 @@
 #include <texture.hpp>
 #include <tilemap.hpp>
 
+struct CollisionEvent {
+  flecs::entity entity1;
+  flecs::entity entity2;
+  Transform2D *transform1;
+  Transform2D *transform2;
+  CollisionVolume *collisionVolume1;
+  CollisionVolume *collisionVolume2;
+};
+
 class Game {
 public:
   Game();

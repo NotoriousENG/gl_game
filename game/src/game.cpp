@@ -113,8 +113,6 @@ int Game::init(SharedData *shared_data) {
           .set<Groundable>({false})
           .add<PhysicsBody>();
 
-  SDL_Log("Tink prefab created");
-
   const auto Anya = world.prefab("Anya")
                         .set<Transform2D>(Transform2D(glm::vec2(150, 454),
                                                       glm::vec2(1, 1), 0))
@@ -136,7 +134,6 @@ int Game::init(SharedData *shared_data) {
         .set<Transform2D>(
             Transform2D(glm::vec2(150 + (64 * i), 454), glm::vec2(1, 1), 0));
   }
-  const auto anya = world.entity("anya").is_a(Anya);
 
   // create tink
   const auto player = world.entity("player").is_a(Tink);
@@ -240,11 +237,9 @@ int Game::init(SharedData *shared_data) {
       });
 
   // collision for entities with tilemap
-  world.system<Transform2D, CollisionVolume, Groundable>()
-      .without<Hurtbox>()
-      .each([](flecs::entity e, Transform2D &t, CollisionVolume &c,
-               Groundable &g) {
-        g.isGrounded = false; // reset grounded state
+  world.system<Transform2D, CollisionVolume, Groundable>().each(
+      [](flecs::entity e, Transform2D &t, CollisionVolume &c, Groundable &g) {
+        g.isGrounded = false;
         const auto tilemapBounds = game->tilemap->GetBounds();
         // clamp x position to tilemap bounds
         t.position.x = glm::clamp(
@@ -267,40 +262,49 @@ int Game::init(SharedData *shared_data) {
         }
       });
 
-  // store all entity to entity collisions
-
-  // Colision Between physics bodies + static bodies
+  // Store all entity collisions for later processing
   const auto collisionQuery = game->world.query<Transform2D, CollisionVolume>();
-  world.system<Transform2D, CollisionVolume, Groundable>()
-      .with<PhysicsBody>()
-      .each([collisionQuery](flecs::entity e1, Transform2D &t1,
-                             CollisionVolume &c1, Groundable &g1) {
-        collisionQuery.each([&e1, &t1, &c1, &g1](flecs::entity e2,
-                                                 Transform2D &t2,
-                                                 CollisionVolume &c2) {
-          if (e1.id() == e2.id() || !e2.has<StaticBody>()) {
+  world.system<Transform2D, CollisionVolume>().each(
+      [collisionQuery](flecs::entity e1, Transform2D &t1, CollisionVolume &c1) {
+        collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
+                                            CollisionVolume &c2) {
+          if (e1.id() == e2.id()) {
             return;
           }
           const SDL_Rect rect1 = {
-              static_cast<int>(t1.position.x + c1.vertices.x),
-              static_cast<int>(t1.position.y + c1.vertices.y),
+              static_cast<int>(t1.global_position.x + c1.vertices.x),
+              static_cast<int>(t1.global_position.y + c1.vertices.y),
               static_cast<int>(c1.vertices.z - c1.vertices.x),
               static_cast<int>(c1.vertices.w - c1.vertices.y)};
           const SDL_Rect rect2 = {
-              static_cast<int>(t2.position.x + c2.vertices.x),
-              static_cast<int>(t2.position.y + c2.vertices.y),
+              static_cast<int>(t2.global_position.x + c2.vertices.x),
+              static_cast<int>(t2.global_position.y + c2.vertices.y),
               static_cast<int>(c2.vertices.z - c2.vertices.x),
               static_cast<int>(c2.vertices.w - c2.vertices.y)};
 
           if (SDL_HasIntersection(&rect1, &rect2)) {
-            game->push_rect_transform(rect1, rect2, t1, c1);
+            // apply damage
+            if (e1.has<Hurtbox>() && e2.has<Health>() &&
+                e1.get<Hurtbox>()->active) {
+              e2.get_mut<Health>()->value -= e1.get<Hurtbox>()->damage;
+              if (e2.get<Health>()->value <= 0) {
+                e2.destruct();
+              }
+            }
+            // push entities apart
+            if (e1.has<PhysicsBody>() && e2.has<StaticBody>()) {
+              game->push_rect_transform(rect1, rect2, t1, c1);
+            }
           }
 
-          // if there is an intersection with a rect slightly above the second
-          // rect then the body is grounded
-          const SDL_Rect rect3 = {rect2.x + 3, rect2.y - 1, rect2.w - 7, 1};
-          if (SDL_HasIntersection(&rect1, &rect3)) {
-            g1.isGrounded = true;
+          // set grounded state
+          if (e1.has<Groundable>() && e1.has<Velocity>() &&
+              e1.get<Velocity>()->value.y >= 0) {
+            auto *g1 = e1.get_mut<Groundable>();
+            const SDL_Rect rect3 = {rect2.x + 3, rect2.y - 1, rect2.w - 7, 1};
+            if (SDL_HasIntersection(&rect1, &rect3)) {
+              g1->isGrounded = true;
+            }
           }
         });
       });
@@ -332,7 +336,6 @@ int Game::init(SharedData *shared_data) {
     const auto parent = e.parent();
     if (parent) {
       const auto parent_t = parent.get<Transform2D>();
-      SDL_Log("t.position.x: %f", t.position.x);
       t.global_position =
           parent_t->global_position + t.position * -parent_t->scale;
     } else {
