@@ -131,6 +131,13 @@ int Game::init(SharedData *shared_data) {
                         .add<StaticBody>()
                         .set<Groundable>({false});
 
+  const auto HpBar = world.prefab("UIFilledRect")
+                         .set<Transform2D>(Transform2D(glm::vec2(0.0f, -15.0f),
+                                                       glm::vec2(1, 1), 0))
+                         .set<UIFilledRect>(UIFilledRect(
+                             glm::vec2(50.0f, 5.0f), 1.0f, 1.0f,
+                             glm::vec4(1, 0, 0, 1), glm::vec4(0, 0, 0, 0.3f)));
+
   // create anya
   // add 1 anya per 64 units on x
   std::string anya_name = "anya";
@@ -143,6 +150,7 @@ int Game::init(SharedData *shared_data) {
 
   // create tink
   const auto player = world.entity("player").is_a(Tink);
+  const auto hpBar = world.entity("hpBar").is_a(HpBar).child_of(player);
 
   // add hurtbox as a child of tink
   const auto hurtbox =
@@ -241,6 +249,7 @@ int Game::init(SharedData *shared_data) {
         const auto dt = it.delta_time();
         for (int i : it) {
           t[i].position += v[i].value * dt;
+          t[i].global_position = t[i].position;
         }
       });
 
@@ -270,7 +279,6 @@ int Game::init(SharedData *shared_data) {
         }
       });
 
-  // Store all entity collisions for later processing
   const auto collisionQuery = game->world.query<Transform2D, CollisionVolume>();
   world.system<Transform2D, CollisionVolume>().each(
       [collisionQuery](flecs::entity e1, Transform2D &t1, CollisionVolume &c1) {
@@ -333,22 +341,24 @@ int Game::init(SharedData *shared_data) {
     // and before everything else to avoid jitter
     game->tilemap->Draw(game->spriteBatcher.get()); // draw the tilemap
   });
-  // render sprites
-  this->world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
-    game->spriteBatcher->Draw(s.texture.get(), t.global_position, t.scale,
-                              t.rotation);
-  });
 
   // update global positions for children
   world.system<Transform2D>().each([](flecs::entity e, Transform2D &t) {
     const auto parent = e.parent();
     if (parent) {
       const auto parent_t = parent.get<Transform2D>();
-      t.global_position =
-          parent_t->global_position + t.position * -parent_t->scale;
+      t.global_position = parent_t->global_position;
+      t.global_position.x += parent_t->scale.x * -t.position.x;
+      t.global_position.y += parent_t->scale.y * t.position.y;
     } else {
       t.global_position = t.position;
     }
+  });
+
+  // render sprites
+  this->world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
+    game->spriteBatcher->Draw(s.texture.get(), t.global_position, t.scale,
+                              t.rotation);
   });
 
   // render animated sprites
@@ -375,6 +385,21 @@ int Game::init(SharedData *shared_data) {
             glm::vec4(1, 1, 1, 1),
             s.spriteSheet->GetAnimationRect(s.currentAnimation, s.currentFrame),
             s.currentAnimation->dimensions);
+      });
+
+  // render health bars
+  this->world.system<Transform2D, UIFilledRect>().each(
+      [](Transform2D &t, UIFilledRect &u) {
+        game->spriteBatcher->DrawRect(
+            glm::vec4(t.global_position.x - u.outline_thickness,
+                      t.global_position.y - u.outline_thickness,
+                      u.dimensions.x + u.outline_thickness * 2,
+                      u.dimensions.y + u.outline_thickness * 2),
+            u.bg_color);
+        game->spriteBatcher->DrawRect(
+            glm::vec4(t.global_position.x, t.global_position.y,
+                      u.percent * u.dimensions.x, u.dimensions.y),
+            u.fill_color);
       });
 
   return 0;

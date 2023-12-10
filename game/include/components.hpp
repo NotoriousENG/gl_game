@@ -104,3 +104,20 @@ struct Velocity {
 struct Gravity {
   float value;
 };
+
+struct UIFilledRect {
+  glm::vec2 dimensions;
+  float outline_thickness;
+  float percent;
+  glm::vec4 fill_color;
+  glm::vec4 bg_color;
+
+  UIFilledRect()
+      : dimensions(glm::vec2(0, 0)), outline_thickness(0), percent(0),
+        fill_color(glm::vec4(0, 0, 0, 0)), bg_color(glm::vec4(0, 0, 0, 0)) {}
+
+  UIFilledRect(glm::vec2 dimensions, float outline_thickness, float percent,
+               glm::vec4 fill_color, glm::vec4 bg_color)
+      : dimensions(dimensions), outline_thickness(outline_thickness),
+        percent(percent), fill_color(fill_color), bg_color(bg_color) {}
+};
