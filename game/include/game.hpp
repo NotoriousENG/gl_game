@@ -33,7 +33,6 @@ public:
                            Transform2D &t1, CollisionVolume &c1);
 
   std::unique_ptr<SpriteBatch> spriteBatcher;
-  std::shared_ptr<Texture> textureTink;
   std::shared_ptr<Texture> textureAnya;
 
   std::shared_ptr<SpriteSheet> spritesheet;

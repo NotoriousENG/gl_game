@@ -92,7 +92,6 @@ int Game::init(SharedData *shared_data) {
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
   this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
   this->mixer = std::make_unique<Mixer>();
-  this->textureTink = std::make_shared<Texture>("assets/textures/tink.png");
   this->textureAnya = std::make_shared<Texture>("assets/textures/anya.png");
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
@@ -414,13 +413,19 @@ int Game::update() {
   const Uint8 *key_state = SDL_GetKeyboardState(&num_keys);
   InputManager::Update(key_state, num_keys);
 
-  if (InputManager::GetKey(SDL_SCANCODE_1).IsJustPressed()) {
-    this->drawColliders = !this->drawColliders;
-  };
-
   if (InputManager::GetKey(SDL_SCANCODE_RETURN).IsJustPressed()) {
     InputManager::ToggleTextInput();
   };
+
+  // mute audio
+  if (!InputManager::IsTextInputActive()) {
+    if (InputManager::GetKey(SDL_SCANCODE_1).IsJustPressed()) {
+      this->drawColliders = !this->drawColliders;
+    };
+    if (InputManager::GetKey(SDL_SCANCODE_M).IsJustPressed()) {
+      this->mixer->ToggleMute();
+    }
+  }
 
   this->world.progress();
 

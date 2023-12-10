@@ -7,6 +7,11 @@ class Mixer {
 public:
   Mixer();
   ~Mixer();
+
+  void ToggleMute();
+
+private:
+  bool isMuted = false;
 };
 
 class Music {

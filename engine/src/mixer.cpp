@@ -16,6 +16,19 @@ Mixer::~Mixer() {
   SDL_Log("Mixer closed\n");
 }
 
+void Mixer::ToggleMute() {
+  SDL_Log("Toggle Mute\n");
+  if (!this->isMuted) {
+    Mix_VolumeMusic(0);
+    Mix_Volume(-1, 0);
+    this->isMuted = true;
+  } else {
+    Mix_VolumeMusic(MIX_MAX_VOLUME);
+    Mix_Volume(-1, MIX_MAX_VOLUME);
+    this->isMuted = false;
+  }
+}
+
 Music::Music(const char *path) {
   this->sdl_music = Mix_LoadMUS(path);
 
