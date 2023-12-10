@@ -4,6 +4,7 @@
 #include <components.hpp>
 #include <font.hpp>
 #include <memory>
+#include <mixer.hpp>
 #include <shared-data.hpp>
 #include <sprite-batch.hpp>
 #include <spritesheet.hpp>
@@ -41,6 +42,8 @@ public:
   flecs::world world;
 
   std::unique_ptr<Font> font;
+  std::unique_ptr<Mixer> mixer;
+  std::unique_ptr<Music> music;
 
   bool drawColliders = false;
 };

@@ -18,6 +18,8 @@
 
 #define TEXT_BUFFER_SIZE 256
 
+#define MAX_SOUND_CHANNELS 8
+
 #ifndef GAME_NAME
 #define GAME_NAME "Add Game Name to CMakeLists.txt"
 #endif

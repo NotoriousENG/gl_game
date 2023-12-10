@@ -90,6 +90,7 @@ int Game::init(SharedData *shared_data) {
   int w, h;
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
   this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
+  this->mixer = std::make_unique<Mixer>();
   this->textureTink = std::make_shared<Texture>("assets/textures/tink.png");
   this->textureAnya = std::make_shared<Texture>("assets/textures/anya.png");
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
@@ -98,6 +99,10 @@ int Game::init(SharedData *shared_data) {
       std::make_shared<SpriteSheet>("assets/textures/spritesheet.atlas");
 
   this->font = std::make_unique<Font>("assets/fonts/Vera.ttf", 32);
+
+  this->music = std::make_unique<Music>("assets/music/Pleasant_Creek_Loop.ogg");
+
+  this->music->play_on_loop();
 
   const glm::vec4 playerRect = this->spritesheet->GetAtlasRect(0);
 

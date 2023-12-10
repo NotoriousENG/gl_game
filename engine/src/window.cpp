@@ -2,8 +2,10 @@
 
 Window::Window(const char *title, int width, int height) {
   // Initialize SDL
-  SDL_Init(SDL_INIT_VIDEO);
-  SDL_Log("SDL initialized");
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    printf("Failed to init SDL!\n");
+    return;
+  }
 
   // Create SDL window
   window =
