@@ -3,6 +3,12 @@
 #include <SDL_mixer.h>
 #include <memory>
 
+class Mixer {
+public:
+  Mixer();
+  ~Mixer();
+};
+
 class Music {
 public:
   Music(const char *path);
@@ -14,8 +20,13 @@ private:
   Mix_Music *sdl_music;
 };
 
-class Mixer {
+class SoundEffect {
 public:
-  Mixer();
-  ~Mixer();
+  SoundEffect(const char *path);
+  ~SoundEffect();
+
+  void play();
+
+private:
+  Mix_Chunk *sdl_chunk;
 };

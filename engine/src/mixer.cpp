@@ -38,3 +38,27 @@ void Music::play_on_loop() {
                  Mix_GetError());
   }
 }
+
+SoundEffect::SoundEffect(const char *path) {
+  // loadWAV returns a Mix_Chunk pointer, it loads other formats too
+  this->sdl_chunk = Mix_LoadWAV(path);
+
+  if (this->sdl_chunk == nullptr) {
+    SDL_LogError(SDL_LOG_CATEGORY_AUDIO, "Failed to load sound effect: %s\n",
+                 Mix_GetError());
+  }
+}
+
+SoundEffect::~SoundEffect() {
+  if (this->sdl_chunk != nullptr) {
+    Mix_FreeChunk(this->sdl_chunk);
+    SDL_Log("Sound effect closed\n");
+  }
+}
+
+void SoundEffect::play() {
+  if (Mix_PlayChannel(-1, this->sdl_chunk, 0) == -1) {
+    SDL_LogError(SDL_LOG_CATEGORY_AUDIO, "Failed to play sound effect: %s\n",
+                 Mix_GetError());
+  }
+}

@@ -44,6 +44,7 @@ public:
   std::unique_ptr<Font> font;
   std::unique_ptr<Mixer> mixer;
   std::unique_ptr<Music> music;
+  std::unique_ptr<SoundEffect> soundEffect;
 
   bool drawColliders = false;
 };

@@ -101,6 +101,7 @@ int Game::init(SharedData *shared_data) {
   this->font = std::make_unique<Font>("assets/fonts/Vera.ttf", 32);
 
   this->music = std::make_unique<Music>("assets/music/Pleasant_Creek_Loop.ogg");
+  this->soundEffect = std::make_unique<SoundEffect>("assets/sfx/meow.ogg");
 
   this->music->play_on_loop();
 
@@ -195,6 +196,8 @@ int Game::init(SharedData *shared_data) {
           if (g[i].isGrounded && attack) {
             p->isAttacking = true;
             s[i].SetAnimation(game->spritesheet->GetAnimation("Attack"));
+            // play sfx
+            game->soundEffect->play();
             const float attack_x_vel = 215.0f;
             if (t[i].scale.x > 0) {
               v[i].value.x = -1 * attack_x_vel;
