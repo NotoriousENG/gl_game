@@ -39,7 +39,10 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
 }
 #endif
 
-Game::Game() { game = this; }
+Game::Game() {
+  game = this;
+  world.set_time_scale(0.0f); // stop time while loading
+}
 
 Game::~Game() {}
 
@@ -92,7 +95,12 @@ int Game::init(SharedData *shared_data) {
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
   this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
   this->mixer = std::make_unique<Mixer>();
-  this->textureAnya = std::make_shared<Texture>("assets/textures/anya.png");
+  this->texturesAnya.push_back(
+      std::make_shared<Texture>("assets/textures/baloon.png"));
+  this->texturesAnya.push_back(
+      std::make_shared<Texture>("assets/textures/kitten.png"));
+  this->texturesAnya.push_back(
+      std::make_shared<Texture>("assets/textures/bomb-anya.png"));
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   this->spritesheet =
@@ -104,6 +112,7 @@ int Game::init(SharedData *shared_data) {
   this->soundEffect = std::make_unique<SoundEffect>("assets/sfx/meow.ogg");
 
   this->music->play_on_loop();
+  this->mixer->ToggleMute();
 
   const glm::vec4 playerRect = this->spritesheet->GetAtlasRect(0);
 
@@ -122,7 +131,7 @@ int Game::init(SharedData *shared_data) {
   const auto Anya = world.prefab("Anya")
                         .set<Transform2D>(Transform2D(glm::vec2(150, 454),
                                                       glm::vec2(1, 1), 0))
-                        .set<Sprite>({this->textureAnya})
+                        .set<Sprite>({this->texturesAnya[0]})
                         .set<Velocity>({glm::vec2(0, 0)})
                         .set<CollisionVolume>({
                             glm::vec4(17, 7, 46, 57),
@@ -145,7 +154,8 @@ int Game::init(SharedData *shared_data) {
     world.entity((anya_name + std::to_string(i)).c_str())
         .is_a(Anya)
         .set<Transform2D>(
-            Transform2D(glm::vec2(150 + (64 * i), 454), glm::vec2(1, 1), 0));
+            Transform2D(glm::vec2(150 + (64 * i), 454), glm::vec2(1, 1), 0))
+        .set<Sprite>({this->texturesAnya[i % 3]});
   }
 
   // create tink
