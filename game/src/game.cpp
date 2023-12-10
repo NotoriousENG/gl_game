@@ -82,6 +82,7 @@ void Game::push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
 int Game::init(SharedData *shared_data) {
   SDL_Log("Game init");
   SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Tink's World");
+  world.set_time_scale(0.0f); // stop time while loading
 
   // map the text_input_buffer
   InputManager::SetTextInputBuffer(&shared_data->text_input_buffer[0]);
@@ -401,6 +402,9 @@ int Game::init(SharedData *shared_data) {
                       u.percent * u.dimensions.x, u.dimensions.y),
             u.fill_color);
       });
+
+  // set flecs time to 1 since we are done loading
+  world.set_time_scale(1.0f);
 
   return 0;
 }
