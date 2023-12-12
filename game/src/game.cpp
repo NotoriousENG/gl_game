@@ -101,6 +101,10 @@ int Game::init(SharedData *shared_data) {
       std::make_shared<Texture>("assets/textures/kitten.png"));
   this->texturesAnya.push_back(
       std::make_shared<Texture>("assets/textures/bomb-anya.png"));
+  this->texturesAnya.push_back(
+      std::make_shared<Texture>("assets/textures/rizzler.png"));
+  this->texturesAnya.push_back(
+      std::make_shared<Texture>("assets/textures/amiibo.png"));
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   this->spritesheet =
@@ -155,7 +159,7 @@ int Game::init(SharedData *shared_data) {
         .is_a(Anya)
         .set<Transform2D>(
             Transform2D(glm::vec2(150 + (64 * i), 454), glm::vec2(1, 1), 0))
-        .set<Sprite>({this->texturesAnya[i % 3]});
+        .set<Sprite>({this->texturesAnya[i % texturesAnya.size()]});
   }
 
   // create tink
