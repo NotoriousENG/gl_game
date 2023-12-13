@@ -39,7 +39,10 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
 }
 #endif
 
-Game::Game() { game = this; }
+Game::Game() {
+  game = this;
+  world.set_time_scale(0.0f); // stop time while loading
+}
 
 Game::~Game() {}
 
@@ -92,7 +95,7 @@ int Game::init(SharedData *shared_data) {
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
   this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
   this->mixer = std::make_unique<Mixer>();
-  this->textureAnya = std::make_shared<Texture>("assets/textures/anya.png");
+  this->textureAnya = std::make_shared<Texture>("assets/textures/amiibo.png");
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   this->spritesheet =
@@ -125,7 +128,7 @@ int Game::init(SharedData *shared_data) {
                         .set<Sprite>({this->textureAnya})
                         .set<Velocity>({glm::vec2(0, 0)})
                         .set<CollisionVolume>({
-                            glm::vec4(17, 7, 46, 57),
+                            glm::vec4(0, 32, 64, 64),
                         })
                         .set<Health>({1.0f})
                         .add<StaticBody>()

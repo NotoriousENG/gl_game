@@ -32,10 +32,12 @@ You can build for multiple platforms using CMake, you will need the following in
 - Run GlGame.exe
 - if you run into any issues, ensure the assets directory is copied to the exe directory
   - with vscode cmake extension you can fix this by [setting build type on multi config](https://github.com/microsoft/vscode-cmake-tools/issues/1298)
+  - note: game.dll hot reloading is supported with MSVC and Clang
 
 ### Linux / MacOS
 
 - install dependencies using package manager i.e. apt, pacman, etc. for MacOS this would be [brew](https://brew.sh/)
+- note: game.so hot reloading is supported with Clang
 
 ```zsh
 mkdir build
