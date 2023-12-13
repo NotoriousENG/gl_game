@@ -107,14 +107,12 @@ struct Gravity {
 
 struct Path {
   std::vector<glm::vec2> points;
-  int currentPointIndex;
   int targetPointIndex;
 
-  Path() : currentPointIndex(0), targetPointIndex(0) {}
+  Path() : targetPointIndex(0) {}
 
-  Path(std::vector<glm::vec2> points, int currentPointIndex,
-       int targetPointIndex)
-      : points(points), currentPointIndex(0), targetPointIndex(0) {}
+  Path(std::vector<glm::vec2> points, int targetPointIndex)
+      : points(points), targetPointIndex(0) {}
 };
 struct Enemy {
   bool seesPlayer;

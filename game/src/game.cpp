@@ -131,14 +131,13 @@ int Game::init(SharedData *shared_data) {
                             glm::vec4(0, 32, 64, 64),
                         })
                         .set<Health>({1.0f})
-                        .add<StaticBody>()
                         .set<Enemy>(Enemy())
                         .set<Path>(Path(
                             {
                                 glm::vec2(300, 511),
                                 glm::vec2(700, 511),
                             },
-                            0, 1));
+                            1));
 
   const auto HpBar = world.prefab("UIFilledRect")
                          .set<Transform2D>(Transform2D(glm::vec2(0.0f, -15.0f),
