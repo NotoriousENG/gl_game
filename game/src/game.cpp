@@ -123,7 +123,7 @@ int Game::init(SharedData *shared_data) {
           .add<PhysicsBody>();
 
   const auto Anya = world.prefab("Anya")
-                        .set<Transform2D>(Transform2D(glm::vec2(150, 454),
+                        .set<Transform2D>(Transform2D(glm::vec2(300, 510),
                                                       glm::vec2(1, 1), 0))
                         .set<Sprite>({this->textureAnya})
                         .set<Velocity>({glm::vec2(0, 0)})
@@ -132,7 +132,13 @@ int Game::init(SharedData *shared_data) {
                         })
                         .set<Health>({1.0f})
                         .add<StaticBody>()
-                        .set<Groundable>({false});
+                        .set<Enemy>(Enemy())
+                        .set<Path>(Path(
+                            {
+                                glm::vec2(300, 511),
+                                glm::vec2(700, 511),
+                            },
+                            0, 1));
 
   const auto HpBar = world.prefab("UIFilledRect")
                          .set<Transform2D>(Transform2D(glm::vec2(0.0f, -15.0f),
@@ -144,12 +150,7 @@ int Game::init(SharedData *shared_data) {
   // create anya
   // add 1 anya per 64 units on x
   std::string anya_name = "anya";
-  for (int i = 0; i < 10; i++) {
-    world.entity((anya_name + std::to_string(i)).c_str())
-        .is_a(Anya)
-        .set<Transform2D>(
-            Transform2D(glm::vec2(150 + (64 * i), 454), glm::vec2(1, 1), 0));
-  }
+  world.entity(anya_name.c_str()).is_a(Anya);
 
   // create tink
   const auto player = world.entity("player").is_a(Tink);
@@ -232,6 +233,38 @@ int Game::init(SharedData *shared_data) {
         }
       });
 
+  const auto playerQuery =
+      game->world.query<Transform2D, Player>(); // note this has to be declared
+                                                // outside for emscripten
+
+  // enemy movement
+  world.system<Enemy, Velocity, Path, Transform2D>().iter(
+      ([](flecs::iter it, Enemy *e, Velocity *v, Path *p, Transform2D *t) {
+        const auto dt = it.delta_time();
+        const float speed = 100.0f;
+        for (int i : it) {
+          // move towards target point if we are within distance 0.1f,
+          // update the target point
+          const auto targetPoint = p[i].points[p[i].targetPointIndex];
+          const auto distance = fabs(glm::distance(t[i].position, targetPoint));
+
+          if (distance < 0.5f) {
+            p[i].targetPointIndex++;
+            if (p[i].targetPointIndex >= p[i].points.size()) {
+              p[i].targetPointIndex = 0;
+              continue;
+            }
+          }
+
+          const auto direction = glm::normalize(targetPoint - t[i].position);
+          if (direction.x < 0) {
+            t[i].scale.x = -1 * fabs(t[i].scale.x);
+          } else {
+            t[i].scale.x = fabs(t[i].scale.x);
+          }
+          v[i].value = direction * speed;
+        }
+      }));
   // gravity system
   world.system<Velocity, Groundable>().iter(
       [](flecs::iter it, Velocity *v, Groundable *g) {
@@ -329,9 +362,6 @@ int Game::init(SharedData *shared_data) {
       });
 
   // update sprite batcher uniforms from camera and draw tilemap
-  const auto playerQuery =
-      game->world.query<Transform2D, Player>(); // note this has to be declared
-                                                // outside for emscripten
 
   world.system<Camera>().each([playerQuery, playerRect](Camera &c) {
     playerQuery.each([&c, playerRect](Transform2D &t, Player &p) {

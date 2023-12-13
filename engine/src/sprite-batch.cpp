@@ -120,6 +120,9 @@ void SpriteBatch::Draw(Texture *texture, glm::vec2 position, glm::vec2 scale,
   if (srcRect == glm::vec4(0, 0, 0, 0)) {
     srcRect = this->textureRect;
   }
+  if (flipPadding == glm::vec2(0, 0)) {
+    flipPadding = glm::vec2(textureRect.z, textureRect.w);
+  }
 
   this->Draw(this->texture, position, scale, rotation, color, srcRect,
              flipPadding);
