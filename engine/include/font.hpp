@@ -23,7 +23,13 @@ class Font {
 public:
   Font(const char *path, int size);
   void RenderText(SpriteBatch *renderer, const char *text, glm::vec2 position,
-                  glm::vec2 scale, glm::vec4 color);
+                  glm::vec2 scale, glm::vec4 color,
+                  glm::vec2 *outDims = nullptr, float wrapWidth = -1);
+
+  int GetFontSize() { return this->fontSize; }
+
+  // get text rect
+  glm::vec2 GetTextDimensions(const char *text);
 
 private:
   int fontSize;

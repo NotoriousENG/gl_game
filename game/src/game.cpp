@@ -101,7 +101,8 @@ int Game::init(SharedData *shared_data) {
   this->spritesheet =
       std::make_shared<SpriteSheet>("assets/textures/spritesheet.atlas");
 
-  this->font = std::make_unique<Font>("assets/fonts/Vera.ttf", 32);
+  this->fontL = std::make_unique<Font>("assets/fonts/Vera.ttf", 32);
+  this->fontS = std::make_unique<Font>("assets/fonts/Vera.ttf", 14);
 
   this->music = std::make_unique<Music>("assets/music/Pleasant_Creek_Loop.ogg");
   this->soundEffect = std::make_unique<SoundEffect>("assets/sfx/meow.ogg");
@@ -146,6 +147,15 @@ int Game::init(SharedData *shared_data) {
                              glm::vec2(50.0f, 5.0f), 1.0f, 1.0f,
                              glm::vec4(1, 0, 0, 1), glm::vec4(0, 0, 0, 0.3f)));
 
+  const auto TextArea =
+      world.prefab("textArea")
+          .set<Transform2D>(
+              Transform2D(glm::vec2(0.0f, -200.0), glm::vec2(1, 1), 0))
+          .set<UIFilledRect>(UIFilledRect(glm::vec2(128.0f, 128.0f), 1.0f, 1.0f,
+                                          glm::vec4(1, 1, 1, 1),
+                                          glm::vec4(0, 0, 0, 0.3f)))
+          .set<AdjustingTextBox>(
+              AdjustingTextBox(InputManager::GetTextInputBuffer(), 0));
   // create anya
   // add 1 anya per 64 units on x
   std::string anya_name = "anya";
@@ -154,6 +164,8 @@ int Game::init(SharedData *shared_data) {
   // create tink
   const auto player = world.entity("player").is_a(Tink);
   const auto hpBar = world.entity("hpBar").is_a(HpBar).child_of(player);
+  const auto textArea =
+      world.entity("playerChatbox").is_a(TextArea).child_of(player);
 
   // add hurtbox as a child of tink
   const auto hurtbox =
@@ -247,7 +259,7 @@ int Game::init(SharedData *shared_data) {
           const auto targetPoint = p[i].points[p[i].targetPointIndex];
           const auto distance = fabs(glm::distance(t[i].position, targetPoint));
 
-          if (distance < 0.5f) {
+          if (distance < 1.0f) {
             p[i].targetPointIndex++;
             if (p[i].targetPointIndex >= p[i].points.size()) {
               p[i].targetPointIndex = 0;
@@ -348,15 +360,15 @@ int Game::init(SharedData *shared_data) {
             }
           }
 
-          // set grounded state
-          if (e1.has<Groundable>() && e1.has<Velocity>() &&
-              e1.get<Velocity>()->value.y >= 0) {
-            auto *g1 = e1.get_mut<Groundable>();
-            const SDL_Rect rect3 = {rect2.x + 3, rect2.y - 1, rect2.w - 7, 1};
-            if (SDL_HasIntersection(&rect1, &rect3)) {
-              g1->isGrounded = true;
-            }
-          }
+          // // set grounded state
+          // if (e1.has<Groundable>() && e1.has<Velocity>() &&
+          //     e1.get<Velocity>()->value.y >= 0) {
+          //   auto *g1 = e1.get_mut<Groundable>();
+          //   const SDL_Rect rect3 = {rect2.x + 3, rect2.y - 1, rect2.w - 7,
+          //   1}; if (SDL_HasIntersection(&rect1, &rect3)) {
+          //     g1->isGrounded = true;
+          //   }
+          // }
         });
       });
 
@@ -491,9 +503,31 @@ int Game::update() {
 
   this->spriteBatcher->Flush();
 
-  this->font->RenderText(this->spriteBatcher.get(),
-                         InputManager::GetTextInputBuffer(), glm::vec2(0, 0),
-                         glm::vec2(1, 1), glm::vec4(1, 0, 1, 1));
+  this->fontL->RenderText(this->spriteBatcher.get(),
+                          InputManager::GetTextInputBuffer(), glm::vec2(0, 32),
+                          glm::vec2(1, 1), glm::vec4(1, 0, 1, 1));
+  this->spriteBatcher->Flush();
+
+  // render text boxes
+  this->world.query<Transform2D, UIFilledRect, AdjustingTextBox>().each(
+      [](Transform2D &t, UIFilledRect &u, AdjustingTextBox &a) {
+        // the max width is 128
+        const auto max_width = 128.0f;
+
+        const int fontSize = game->fontS->GetFontSize();
+        const int rowSpacing = fontSize * 0.75f;
+
+        // set the position of the rendered text
+        const auto tPos = glm::vec2(t.global_position.x + rowSpacing / 2,
+                                    t.global_position.y + rowSpacing / 2);
+
+        game->fontS->RenderText(game->spriteBatcher.get(), a.text, tPos,
+                                t.scale, glm::vec4(0, 0, 0, 1), &u.dimensions,
+                                max_width);
+
+        // change the transform offset to be -36 - the height of the text
+        t.position.y = -36 - u.dimensions.y;
+      });
 
   // draw all sprites in the batch
   this->spriteBatcher->Flush();

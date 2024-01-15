@@ -120,13 +120,19 @@ Font::Font(const char *path, int size) {
 }
 
 void Font::RenderText(SpriteBatch *renderer, const char *text,
-                      glm::vec2 position, glm::vec2 scale, glm::vec4 color) {
+                      glm::vec2 position, glm::vec2 scale, glm::vec4 color,
+                      glm::vec2 *outDims, float wrapWidth) {
   glBindTexture(GL_TEXTURE_2D, this->tex);
 
   renderer->SetTextureAndDimensions(this->tex, this->texDim, this->texDim);
 
+  const auto startY = position.y;
+  const auto startX = position.x;
+
   // add the fontsize * 2 to the y position, the top left is the anchor point
-  position.y += this->fontSize * 2;
+  position.y += this->fontSize;
+
+  float currentWidth = 0;
 
   for (int i = 0; i < strlen(text); i++) {
     Glyph *g = &this->glyphs.at(text[i]);
@@ -145,5 +151,47 @@ void Font::RenderText(SpriteBatch *renderer, const char *text,
     renderer->Draw(this->tex, adjustedPosition, scale, 0.0f, color, srcRect);
 
     position.x += g->advance.x * scale.x;
+
+    currentWidth += g->advance.x * scale.x;
+
+    if (wrapWidth >= 0 && currentWidth > wrapWidth) {
+      position.y += this->fontSize * 1.5f;
+      position.x = startX;
+      currentWidth = 0;
+    }
   }
+
+  if (outDims != nullptr) {
+
+    int w;
+    if (wrapWidth <= 0) {
+      w = currentWidth;
+    } else {
+      w = wrapWidth;
+    }
+
+    // if no text length is 0
+    if (strlen(text) == 0) {
+      *outDims = glm::vec2(0, 0);
+      return;
+    }
+
+    *outDims = glm::vec2(w + fontSize, position.y - startY + fontSize);
+  }
+}
+
+glm::vec2 Font::GetTextDimensions(const char *text) {
+  glm::vec2 dimensions = glm::vec2(0, 0);
+  for (int i = 0; i < strlen(text); i++) {
+    Glyph *g = &this->glyphs.at(text[i]);
+    if (g == nullptr) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not find glyph %c",
+                   text[i]);
+      continue;
+    }
+
+    dimensions.x += g->advance.x;
+    dimensions.y = std::max(dimensions.y, (float)g->size.y);
+  }
+  return dimensions;
 }

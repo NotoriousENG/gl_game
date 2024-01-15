@@ -135,3 +135,14 @@ struct UIFilledRect {
       : dimensions(dimensions), outline_thickness(outline_thickness),
         percent(percent), fill_color(fill_color), bg_color(bg_color) {}
 };
+
+struct AdjustingTextBox {
+  const char *text;
+  float t;
+  float duration;
+
+  AdjustingTextBox() : text(""), t(0), duration(0) {}
+
+  AdjustingTextBox(const char *text, float duration)
+      : text(text), t(0), duration(duration) {}
+};

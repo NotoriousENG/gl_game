@@ -40,7 +40,8 @@ public:
   std::unique_ptr<Tilemap> tilemap;
   flecs::world world;
 
-  std::unique_ptr<Font> font;
+  std::unique_ptr<Font> fontL;
+  std::unique_ptr<Font> fontS;
   std::unique_ptr<Mixer> mixer;
   std::unique_ptr<Music> music;
   std::unique_ptr<SoundEffect> soundEffect;

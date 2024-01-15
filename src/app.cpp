@@ -101,7 +101,12 @@ void App::poll_events() {
       }
       break;
     case SDL_TEXTINPUT:
-      strcat(this->shared_data.text_input_buffer, event.text.text);
+      // add text to buffer
+      if (strlen(this->shared_data.text_input_buffer) +
+              strlen(event.text.text) <
+          TEXT_BUFFER_SIZE) {
+        strcat(this->shared_data.text_input_buffer, event.text.text);
+      }
       break;
     default:
       break;
