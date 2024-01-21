@@ -36,10 +36,6 @@ struct Transform2D {
   }
 };
 
-struct Camera {
-  glm::vec2 position;
-};
-
 struct Hurtbox {
   float damage;
   bool active;
@@ -57,8 +53,4 @@ struct Path {
 
   Path(std::vector<glm::vec2> points, int targetPointIndex)
       : points(points), targetPointIndex(0) {}
-};
-struct Enemy {
-  bool seesPlayer;
-  Enemy() : seesPlayer(false) {}
 };

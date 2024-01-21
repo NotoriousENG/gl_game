@@ -4,9 +4,12 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <input.hpp>
+#include <plugins/camera.hpp>
+#include <plugins/enemy.hpp>
 #include <plugins/graphics.hpp>
 #include <plugins/physics.hpp>
 #include <plugins/player.hpp>
+#include <plugins/transform.hpp>
 #include <utils.hpp>
 
 static Game *game; // this is dirty but it works for now
@@ -77,15 +80,14 @@ int Game::init(SharedData *shared_data) {
   this->music->play_on_loop();
   // this->mixer->ToggleMute();
 
-  const glm::vec4 playerRect = this->spritesheet->GetAtlasRect(0);
-
   // prefabs
   const auto Tink =
       world.prefab("Tink")
           .set<Transform2D>(Transform2D(glm::vec2(80, 400), glm::vec2(1, 1), 0))
           .set<AnimatedSprite>(AnimatedSprite(
               this->spritesheet, this->spritesheet->GetAnimation("Idle")))
-          .set<Player>({"Player 1", false, this->soundEffect.get()})
+          .set<Player>({"Player 1", false, this->soundEffect.get(),
+                        this->spritesheet->GetAtlasRect(0)})
           .set<Velocity>({glm::vec2(0, 0)})
           .set<CollisionVolume>({glm::vec4(3, 7, 39, 39)})
           .set<Groundable>({false})
@@ -148,73 +150,12 @@ int Game::init(SharedData *shared_data) {
   world.set<Renderer>({.renderer = this->spriteBatcher.get()});
   world.set<Map>({.value = this->tilemap.get()});
 
-  // player
+  // Plugins
   PlayerPlugin().addSystems(this->world);
-
-  const auto playerQuery =
-      game->world.query<Transform2D, Player>(); // note this has to be declared
-                                                // outside for emscripten
-
-  // enemy movement
-  world.system<Enemy, Velocity, Path, Transform2D>().iter(
-      ([](flecs::iter it, Enemy *e, Velocity *v, Path *p, Transform2D *t) {
-        const auto dt = it.delta_time();
-        const float speed = 100.0f;
-        for (int i : it) {
-          // move towards target point if we are within distance 0.1f,
-          // update the target point
-          const auto targetPoint = p[i].points[p[i].targetPointIndex];
-          const auto distance = fabs(glm::distance(t[i].position, targetPoint));
-
-          if (distance < 1.0f) {
-            p[i].targetPointIndex++;
-            if (p[i].targetPointIndex >= p[i].points.size()) {
-              p[i].targetPointIndex = 0;
-              continue;
-            }
-          }
-
-          const auto direction = glm::normalize(targetPoint - t[i].position);
-          if (direction.x < 0) {
-            t[i].scale.x = -1 * fabs(t[i].scale.x);
-          } else {
-            t[i].scale.x = fabs(t[i].scale.x);
-          }
-          v[i].value = direction * speed;
-        }
-      }));
-
+  EnemyPlugin().addSystems(this->world);
   PhysicsPlugin().addSystems(this->world);
-
-  // update sprite batcher uniforms from camera and draw tilemap
-
-  world.system<Camera>().each([playerQuery, playerRect](Camera &c) {
-    playerQuery.each([&c, playerRect](Transform2D &t, Player &p) {
-      glm::vec2 offset = glm::vec2(playerRect.z, playerRect.w) / 2.0f;
-      c.position = t.position + offset;
-    });
-    game->spriteBatcher->UpdateCamera(c.position, game->tilemap->GetBounds());
-
-    // silly but the tilemap needs to be drawn after the camera is updated
-    // and before everything else to avoid jitter
-    game->tilemap->Draw(game->spriteBatcher.get()); // draw the tilemap
-  });
-
-  // update global positions for children
-  world.system<Transform2D>().each([](flecs::entity e, Transform2D &t) {
-    const auto parent = e.parent();
-    if (parent) {
-      const auto parent_t = parent.get<Transform2D>();
-      t.global_position = parent_t->global_position;
-      t.global_position.x += parent_t->scale.x * -t.position.x;
-      t.global_position.y += parent_t->scale.y * t.position.y;
-    } else {
-      t.global_position = t.position;
-    }
-  });
-
-  auto b = this->world.get<Renderer>()->renderer;
-
+  CameraPlugin().addSystems(this->world);
+  Transform2DPlugin().addSystems(this->world);
   GraphicsPlugin().addSystems(this->world);
 
   // set flecs time to 1 since we are done loading

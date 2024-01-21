@@ -13,6 +13,7 @@ struct Player {
   std::string name;
   bool isAttacking;         // @TODO move to child collider
   SoundEffect *soundEffect; // @TODO make own component
+  glm::vec4 defaultRect;    // @TODO move this
 };
 
 // systems:
