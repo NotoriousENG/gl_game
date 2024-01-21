@@ -36,57 +36,9 @@ struct Transform2D {
   }
 };
 
-struct Sprite {
-  std::shared_ptr<Texture> texture;
-};
-
-struct AnimatedSprite {
-  std::shared_ptr<SpriteSheet> spriteSheet;
-  float currentTime;
-  int currentFrame;
-  SpriteAnimation *currentAnimation;
-  bool isAnimationFinished;
-
-  void SetAnimation(SpriteAnimation *animation) {
-    if (this->currentAnimation == animation) {
-      return;
-    }
-    this->currentAnimation = animation;
-    this->currentFrame = 0;
-    this->currentTime = 0;
-    this->isAnimationFinished = false;
-  };
-
-  AnimatedSprite(std::shared_ptr<SpriteSheet> spriteSheet,
-                 SpriteAnimation *animation)
-      : spriteSheet(spriteSheet), currentTime(0), currentFrame(0),
-        currentAnimation(animation), isAnimationFinished(false) {}
-
-  AnimatedSprite()
-      : spriteSheet(nullptr), currentTime(0), currentFrame(0),
-        currentAnimation(nullptr) {}
-};
-
-struct Player {
-  std::string name;
-  bool isAttacking; // @TODO move to child collider
-};
-
 struct Camera {
   glm::vec2 position;
 };
-
-struct Groundable {
-  bool isGrounded;
-};
-
-struct CollisionVolume {
-  glm::vec4 vertices;
-};
-
-struct PhysicsBody {};
-
-struct StaticBody {};
 
 struct Hurtbox {
   float damage;
@@ -94,14 +46,6 @@ struct Hurtbox {
 };
 
 struct Health {
-  float value;
-};
-
-struct Velocity {
-  glm::vec2 value;
-};
-
-struct Gravity {
   float value;
 };
 
@@ -117,32 +61,4 @@ struct Path {
 struct Enemy {
   bool seesPlayer;
   Enemy() : seesPlayer(false) {}
-};
-
-struct UIFilledRect {
-  glm::vec2 dimensions;
-  float outline_thickness;
-  float percent;
-  glm::vec4 fill_color;
-  glm::vec4 bg_color;
-
-  UIFilledRect()
-      : dimensions(glm::vec2(0, 0)), outline_thickness(0), percent(0),
-        fill_color(glm::vec4(0, 0, 0, 0)), bg_color(glm::vec4(0, 0, 0, 0)) {}
-
-  UIFilledRect(glm::vec2 dimensions, float outline_thickness, float percent,
-               glm::vec4 fill_color, glm::vec4 bg_color)
-      : dimensions(dimensions), outline_thickness(outline_thickness),
-        percent(percent), fill_color(fill_color), bg_color(bg_color) {}
-};
-
-struct AdjustingTextBox {
-  const char *text;
-  float t;
-  float duration;
-
-  AdjustingTextBox() : text(""), t(0), duration(0) {}
-
-  AdjustingTextBox(const char *text, float duration)
-      : text(text), t(0), duration(duration) {}
 };

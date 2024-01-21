@@ -4,6 +4,9 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <input.hpp>
+#include <plugins/graphics.hpp>
+#include <plugins/physics.hpp>
+#include <plugins/player.hpp>
 #include <utils.hpp>
 
 static Game *game; // this is dirty but it works for now
@@ -46,42 +49,6 @@ Game::Game() {
 
 Game::~Game() {}
 
-void Game::push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
-                               Transform2D &t1, CollisionVolume &c1) {
-  const auto rect1Center = glm::vec2(rect.x + rect.w / 2, rect.y + rect.h / 2);
-
-  const auto rect2Center =
-      glm::vec2(pushedBy.x + pushedBy.w / 2, pushedBy.y + pushedBy.h / 2);
-
-  const auto distanceX = rect1Center.x - rect2Center.x;
-  const auto distanceY = rect1Center.y - rect2Center.y;
-
-  // Figure out the combined half-widths and half-heights
-  const auto halfWidths = (rect.w + pushedBy.w) / 2;
-  const auto halfHeights = (rect.h + pushedBy.h) / 2;
-
-  // Calculate the overlap between the two rectangles
-  const auto overlapX = halfWidths - std::abs(distanceX);
-  const auto overlapY = halfHeights - std::abs(distanceY);
-
-  // The collision has happened on the axis of least penetration
-  const bool isMoreVertical = overlapX > overlapY;
-
-  if (isMoreVertical) {
-    if (distanceY < 0) {
-      t1.position.y = pushedBy.y - rect.h - c1.vertices.y;
-    } else {
-      t1.position.y = pushedBy.y + pushedBy.h - c1.vertices.y;
-    }
-  } else {
-    if (distanceX < 0) {
-      t1.position.x = pushedBy.x - rect.w - c1.vertices.x;
-    } else {
-      t1.position.x = pushedBy.x + pushedBy.w - c1.vertices.x;
-    }
-  }
-}
-
 int Game::init(SharedData *shared_data) {
   SDL_Log("Game init");
   SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Tink's World");
@@ -108,6 +75,7 @@ int Game::init(SharedData *shared_data) {
   this->soundEffect = std::make_unique<SoundEffect>("assets/sfx/meow.ogg");
 
   this->music->play_on_loop();
+  // this->mixer->ToggleMute();
 
   const glm::vec4 playerRect = this->spritesheet->GetAtlasRect(0);
 
@@ -117,7 +85,7 @@ int Game::init(SharedData *shared_data) {
           .set<Transform2D>(Transform2D(glm::vec2(80, 400), glm::vec2(1, 1), 0))
           .set<AnimatedSprite>(AnimatedSprite(
               this->spritesheet, this->spritesheet->GetAnimation("Idle")))
-          .set<Player>({"Player 1", false})
+          .set<Player>({"Player 1", false, this->soundEffect.get()})
           .set<Velocity>({glm::vec2(0, 0)})
           .set<CollisionVolume>({glm::vec4(3, 7, 39, 39)})
           .set<Groundable>({false})
@@ -154,8 +122,8 @@ int Game::init(SharedData *shared_data) {
           .set<UIFilledRect>(UIFilledRect(glm::vec2(128.0f, 128.0f), 1.0f, 1.0f,
                                           glm::vec4(1, 1, 1, 1),
                                           glm::vec4(0, 0, 0, 0.3f)))
-          .set<AdjustingTextBox>(
-              AdjustingTextBox(InputManager::GetTextInputBuffer(), 0));
+          .set<AdjustingTextBox>(AdjustingTextBox(
+              this->fontS.get(), InputManager::GetTextInputBuffer(), 0));
   // create anya
   // add 1 anya per 64 units on x
   std::string anya_name = "anya";
@@ -177,72 +145,11 @@ int Game::init(SharedData *shared_data) {
 
   world.set<Camera>({.position = glm::vec2(0, 0)});
   world.set<Gravity>({.value = 980.0f});
+  world.set<Renderer>({.renderer = this->spriteBatcher.get()});
+  world.set<Map>({.value = this->tilemap.get()});
 
-  // player movement + update camera
-  world
-      .system<Player, Velocity, CollisionVolume, AnimatedSprite, Transform2D,
-              Groundable>()
-      .iter([](flecs::iter it, Player *p, Velocity *v, CollisionVolume *c,
-               AnimatedSprite *s, Transform2D *t, Groundable *g) {
-        const float speed = 200.0f;
-        const float move_x = InputManager::GetAxisHorizontalMovement();
-        const auto jump = InputManager::GetTriggerJump();
-        const auto attack =
-            InputManager::GetKey(SDL_SCANCODE_LCTRL).IsJustPressed();
-
-        for (int i : it) {
-          if (!s[i].isAnimationFinished && !s[i].currentAnimation->loop) {
-            return; // the attack animation drives velocity for now
-          }
-
-          p->isAttacking = false;
-
-          const auto h = it.entity(0).lookup("hurtbox");
-          auto *hurtbox = h.get_mut<Hurtbox>();
-          hurtbox->active = false;
-
-          const auto last_velocity = v[i].value;
-          v[i].value.x = move_x * speed;
-          if (g[i].isGrounded && jump) {
-            v[i].value.y = -515.0f;
-            g[i].isGrounded = false;
-          }
-
-          if (move_x != 0) {
-            if (move_x > 0) {
-              t[i].scale.x = -1 * fabs(t[i].scale.x);
-            } else {
-              t[i].scale.x = fabs(t[i].scale.x);
-            }
-          }
-
-          if (g[i].isGrounded && attack) {
-            p->isAttacking = true;
-            s[i].SetAnimation(game->spritesheet->GetAnimation("Attack"));
-            // play sfx
-            game->soundEffect->play();
-            const float attack_x_vel = 215.0f;
-            if (t[i].scale.x > 0) {
-              v[i].value.x = -1 * attack_x_vel;
-            } else {
-              v[i].value.x = attack_x_vel;
-            }
-            v[i].value.y = -315.0f;
-            g[i].isGrounded = false;
-            hurtbox->active = true;
-            return;
-          }
-
-          // update animations
-          if (!g[i].isGrounded) {
-            s[i].SetAnimation(game->spritesheet->GetAnimation("Jump"));
-          } else if (move_x != 0) {
-            s[i].SetAnimation(game->spritesheet->GetAnimation("Run"));
-          } else {
-            s[i].SetAnimation(game->spritesheet->GetAnimation("Idle"));
-          }
-        }
-      });
+  // player
+  PlayerPlugin().addSystems(this->world);
 
   const auto playerQuery =
       game->world.query<Transform2D, Player>(); // note this has to be declared
@@ -276,101 +183,8 @@ int Game::init(SharedData *shared_data) {
           v[i].value = direction * speed;
         }
       }));
-  // gravity system
-  world.system<Velocity, Groundable>().iter(
-      [](flecs::iter it, Velocity *v, Groundable *g) {
-        const auto dt = it.delta_time();
-        const float grav = game->world.get<Gravity>()->value;
-        for (int i : it) {
-          if (g[i].isGrounded) {
-            v[i].value.y = 0.0f;
-          } else {
-            v[i].value.y += grav * dt;
-          }
-        }
-      });
 
-  // velocity system
-  world.system<Velocity, Transform2D>().iter(
-      [](flecs::iter it, Velocity *v, Transform2D *t) {
-        const auto dt = it.delta_time();
-        for (int i : it) {
-          t[i].position += v[i].value * dt;
-          t[i].global_position = t[i].position;
-        }
-      });
-
-  // collision for entities with tilemap
-  world.system<Transform2D, CollisionVolume, Groundable>().each(
-      [](flecs::entity e, Transform2D &t, CollisionVolume &c, Groundable &g) {
-        g.isGrounded = false;
-        const auto tilemapBounds = game->tilemap->GetBounds();
-        // clamp x position to tilemap bounds
-        t.position.x = glm::clamp(
-            static_cast<int>(t.position.x),
-            static_cast<int>(tilemapBounds.x - c.vertices.x),
-            static_cast<int>(game->tilemap->GetBounds().w - c.vertices.z));
-
-        // collide with tiles
-        SDL_Rect rect = {static_cast<int>(t.position.x + c.vertices.x),
-                         static_cast<int>(t.position.y + c.vertices.y),
-                         static_cast<int>(c.vertices.z - c.vertices.x),
-                         static_cast<int>(c.vertices.w - c.vertices.y)};
-        SDL_Rect found = {0, 0, 0, 0};
-        bool isOverlapping = false;
-        game->tilemap->IsCollidingWith(&rect, found, e,
-                                       g.isGrounded); // check for collision
-
-        if ((found.x != 0 || found.y != 0 || found.w != 0 || found.h != 0)) {
-          game->push_rect_transform(rect, found, t, c);
-        }
-      });
-
-  const auto collisionQuery = game->world.query<Transform2D, CollisionVolume>();
-  world.system<Transform2D, CollisionVolume>().each(
-      [collisionQuery](flecs::entity e1, Transform2D &t1, CollisionVolume &c1) {
-        collisionQuery.each([&e1, &t1, &c1](flecs::entity e2, Transform2D &t2,
-                                            CollisionVolume &c2) {
-          if (e1.id() == e2.id()) {
-            return;
-          }
-          const SDL_Rect rect1 = {
-              static_cast<int>(t1.global_position.x + c1.vertices.x),
-              static_cast<int>(t1.global_position.y + c1.vertices.y),
-              static_cast<int>(c1.vertices.z - c1.vertices.x),
-              static_cast<int>(c1.vertices.w - c1.vertices.y)};
-          const SDL_Rect rect2 = {
-              static_cast<int>(t2.global_position.x + c2.vertices.x),
-              static_cast<int>(t2.global_position.y + c2.vertices.y),
-              static_cast<int>(c2.vertices.z - c2.vertices.x),
-              static_cast<int>(c2.vertices.w - c2.vertices.y)};
-
-          if (SDL_HasIntersection(&rect1, &rect2)) {
-            // apply damage
-            if (e1.has<Hurtbox>() && e2.has<Health>() &&
-                e1.get<Hurtbox>()->active) {
-              e2.get_mut<Health>()->value -= e1.get<Hurtbox>()->damage;
-              if (e2.get<Health>()->value <= 0) {
-                e2.destruct();
-              }
-            }
-            // push entities apart
-            if (e1.has<PhysicsBody>() && e2.has<StaticBody>()) {
-              game->push_rect_transform(rect1, rect2, t1, c1);
-            }
-          }
-
-          // // set grounded state
-          // if (e1.has<Groundable>() && e1.has<Velocity>() &&
-          //     e1.get<Velocity>()->value.y >= 0) {
-          //   auto *g1 = e1.get_mut<Groundable>();
-          //   const SDL_Rect rect3 = {rect2.x + 3, rect2.y - 1, rect2.w - 7,
-          //   1}; if (SDL_HasIntersection(&rect1, &rect3)) {
-          //     g1->isGrounded = true;
-          //   }
-          // }
-        });
-      });
+  PhysicsPlugin().addSystems(this->world);
 
   // update sprite batcher uniforms from camera and draw tilemap
 
@@ -399,52 +213,9 @@ int Game::init(SharedData *shared_data) {
     }
   });
 
-  // render sprites
-  this->world.system<Transform2D, Sprite>().each([](Transform2D &t, Sprite &s) {
-    game->spriteBatcher->Draw(s.texture.get(), t.global_position, t.scale,
-                              t.rotation);
-  });
+  auto b = this->world.get<Renderer>()->renderer;
 
-  // render animated sprites
-  // @TODO: generalize this more,
-  // right now we are just forcing an animation for a specific sheet
-  this->world.system<Transform2D, AnimatedSprite>().each(
-      [](Transform2D &t, AnimatedSprite &s) {
-        s.currentTime += game->world.delta_time();
-        if (!s.isAnimationFinished &&
-            s.currentTime >= s.currentAnimation->frameTime) {
-          s.currentTime -= s.currentAnimation->frameTime;
-          s.currentFrame++;
-          if (s.currentFrame >= s.currentAnimation->frames.size()) {
-            if (!s.currentAnimation->loop) {
-              s.isAnimationFinished = true;
-              s.currentFrame--;
-              return;
-            }
-            s.currentFrame = 0;
-          }
-        }
-        game->spriteBatcher->Draw(
-            s.spriteSheet->GetTexture(), t.global_position, t.scale, t.rotation,
-            glm::vec4(1, 1, 1, 1),
-            s.spriteSheet->GetAnimationRect(s.currentAnimation, s.currentFrame),
-            s.currentAnimation->dimensions);
-      });
-
-  // render health bars
-  this->world.system<Transform2D, UIFilledRect>().each(
-      [](Transform2D &t, UIFilledRect &u) {
-        game->spriteBatcher->DrawRect(
-            glm::vec4(t.global_position.x - u.outline_thickness,
-                      t.global_position.y - u.outline_thickness,
-                      u.dimensions.x + u.outline_thickness * 2,
-                      u.dimensions.y + u.outline_thickness * 2),
-            u.bg_color);
-        game->spriteBatcher->DrawRect(
-            glm::vec4(t.global_position.x, t.global_position.y,
-                      u.percent * u.dimensions.x, u.dimensions.y),
-            u.fill_color);
-      });
+  GraphicsPlugin().addSystems(this->world);
 
   // set flecs time to 1 since we are done loading
   world.set_time_scale(1.0f);
@@ -500,34 +271,6 @@ int Game::update() {
         });
     this->tilemap->DrawColliders(this->spriteBatcher.get());
   }
-
-  this->spriteBatcher->Flush();
-
-  this->fontL->RenderText(this->spriteBatcher.get(),
-                          InputManager::GetTextInputBuffer(), glm::vec2(0, 32),
-                          glm::vec2(1, 1), glm::vec4(1, 0, 1, 1));
-  this->spriteBatcher->Flush();
-
-  // render text boxes
-  this->world.query<Transform2D, UIFilledRect, AdjustingTextBox>().each(
-      [](Transform2D &t, UIFilledRect &u, AdjustingTextBox &a) {
-        // the max width is 128
-        const auto max_width = 128.0f;
-
-        const int fontSize = game->fontS->GetFontSize();
-        const int rowSpacing = fontSize * 0.75f;
-
-        // set the position of the rendered text
-        const auto tPos = glm::vec2(t.global_position.x + rowSpacing / 2,
-                                    t.global_position.y + rowSpacing / 2);
-
-        game->fontS->RenderText(game->spriteBatcher.get(), a.text, tPos,
-                                t.scale, glm::vec4(0, 0, 0, 1), &u.dimensions,
-                                max_width);
-
-        // change the transform offset to be -36 - the height of the text
-        t.position.y = -36 - u.dimensions.y;
-      });
 
   // draw all sprites in the batch
   this->spriteBatcher->Flush();

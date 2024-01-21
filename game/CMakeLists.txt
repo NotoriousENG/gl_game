@@ -21,7 +21,7 @@ else()
   set(LIB_TYPE STATIC)
 endif()
 
-add_library (${PROJECT_NAME} ${LIB_TYPE} "src/game.cpp")
+add_library (${PROJECT_NAME} ${LIB_TYPE} "src/game.cpp" "src/plugins/graphics.cpp" "src/plugins/player.cpp" "src/plugins/physics.cpp")
 
 target_include_directories(${PROJECT_NAME} PUBLIC ../engine/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC engine)
