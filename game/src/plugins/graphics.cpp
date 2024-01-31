@@ -61,15 +61,15 @@ void renderAdjustingTextBox(SpriteBatch *renderer, Transform2D &t,
 void GraphicsPlugin::addSystems(flecs::world &ecs) {
   SpriteBatch *r = ecs.get<Renderer>()->renderer;
 
-  ecs.system<Transform2D, Sprite>().each(
-      [r](Transform2D &t, Sprite &s) { renderSprite(r, t, s); });
-
   ecs.system<Transform2D, AnimatedSprite>().iter(
       [r](flecs::iter it, Transform2D *t, AnimatedSprite *s) {
         for (int i : it) {
           renderAnimatedSprite(r, it.delta_time(), t[i], s[i]);
         }
       });
+
+  ecs.system<Transform2D, Sprite>().each(
+      [r](Transform2D &t, Sprite &s) { renderSprite(r, t, s); });
 
   ecs.system<Transform2D, UIFilledRect>().each(
       [r](Transform2D &t, UIFilledRect &u) { renderUIFilledRect(r, t, u); });

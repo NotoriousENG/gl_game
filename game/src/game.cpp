@@ -66,6 +66,7 @@ int Game::init(SharedData *shared_data) {
   this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
   this->mixer = std::make_unique<Mixer>();
   this->textureAnya = std::make_shared<Texture>("assets/textures/amiibo.png");
+  this->textureArrow = std::make_shared<Texture>("assets/textures/arrow.png");
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   this->spritesheet =
@@ -78,7 +79,7 @@ int Game::init(SharedData *shared_data) {
   this->soundEffect = std::make_unique<SoundEffect>("assets/sfx/meow.ogg");
 
   this->music->play_on_loop();
-  // this->mixer->ToggleMute();
+  this->mixer->ToggleMute();
 
   // prefabs
   const auto Tink =
@@ -117,10 +118,16 @@ int Game::init(SharedData *shared_data) {
                              glm::vec2(50.0f, 5.0f), 1.0f, 1.0f,
                              glm::vec4(1, 0, 0, 1), glm::vec4(0, 0, 0, 0.3f)));
 
+  const auto DirectionArrow =
+      world.prefab("DirectionIndicator")
+          .set<Transform2D>(
+              Transform2D(glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 0))
+          .set<Sprite>({this->textureArrow});
+
   const auto TextArea =
       world.prefab("textArea")
           .set<Transform2D>(
-              Transform2D(glm::vec2(0.0f, -200.0), glm::vec2(1, 1), 0))
+              Transform2D(glm::vec2(-45.0f, -200.0), glm::vec2(1, 1), 0))
           .set<UIFilledRect>(UIFilledRect(glm::vec2(128.0f, 128.0f), 1.0f, 1.0f,
                                           glm::vec4(1, 1, 1, 1),
                                           glm::vec4(0, 0, 0, 0.3f)))
@@ -134,6 +141,8 @@ int Game::init(SharedData *shared_data) {
   // create tink
   const auto player = world.entity("player").is_a(Tink);
   const auto hpBar = world.entity("hpBar").is_a(HpBar).child_of(player);
+  const auto directionArrow =
+      world.entity("directionArrow").is_a(DirectionArrow).child_of(player);
   const auto textArea =
       world.entity("playerChatbox").is_a(TextArea).child_of(player);
 

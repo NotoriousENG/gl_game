@@ -3,7 +3,7 @@
 void playerUpdate(flecs::iter it, Player *p, Velocity *v, CollisionVolume *c,
                   AnimatedSprite *s, Transform2D *t, Groundable *g) {
   const float speed = 200.0f;
-  const float move_x = InputManager::GetAxisHorizontalMovement();
+  const auto move = InputManager::GetVectorMovement();
   const auto jump = InputManager::GetTriggerJump();
   const auto attack = InputManager::GetKey(SDL_SCANCODE_LCTRL).IsJustPressed();
 
@@ -19,14 +19,20 @@ void playerUpdate(flecs::iter it, Player *p, Velocity *v, CollisionVolume *c,
     hurtbox->active = false;
 
     const auto last_velocity = v[i].value;
-    v[i].value.x = move_x * speed;
+    v[i].value.x = move.x * speed;
     if (g[i].isGrounded && jump) {
       v[i].value.y = -515.0f;
       g[i].isGrounded = false;
     }
 
-    if (move_x != 0) {
-      if (move_x > 0) {
+    const auto dir = it.entity(0).lookup("directionArrow");
+    auto *dir_t = dir.get_mut<Transform2D>();
+    if (move.x != 0.0f || move.y != 0.0f) {
+      dir_t->rotation = atan2(-move.y, move.x);
+    }
+
+    if (move.x != 0.0f) {
+      if (move.x > 0.0f) {
         t[i].scale.x = -1 * fabs(t[i].scale.x);
       } else {
         t[i].scale.x = fabs(t[i].scale.x);
@@ -53,7 +59,7 @@ void playerUpdate(flecs::iter it, Player *p, Velocity *v, CollisionVolume *c,
     // update animations
     if (!g[i].isGrounded) {
       s[i].SetAnimation(s->spriteSheet->GetAnimation("Jump"));
-    } else if (move_x != 0) {
+    } else if (move.x != 0.0f) {
       s[i].SetAnimation(s->spriteSheet->GetAnimation("Run"));
     } else {
       s[i].SetAnimation(s->spriteSheet->GetAnimation("Idle"));

@@ -7,8 +7,8 @@ void Transform2DPlugin::addSystems(flecs::world &world) {
     if (parent) {
       const auto parent_t = parent.get<Transform2D>();
       t.global_position = parent_t->global_position;
-      t.global_position.x += parent_t->scale.x * -t.position.x;
-      t.global_position.y += parent_t->scale.y * t.position.y;
+      t.global_position.x += t.position.x;
+      t.global_position.y += t.position.y;
     } else {
       t.global_position = t.position;
     }
