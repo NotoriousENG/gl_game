@@ -6,6 +6,7 @@ void playerUpdate(flecs::iter it, Player *p, Velocity *v, CollisionVolume *c,
   const auto move = InputManager::GetVectorMovement();
   const auto jump = InputManager::GetTriggerJump();
   const auto attack = InputManager::GetKey(SDL_SCANCODE_LCTRL).IsJustPressed();
+  const auto fire = InputManager::GetKey(SDL_SCANCODE_Z).IsJustPressed();
 
   for (int i : it) {
     if (!s[i].isAnimationFinished && !s[i].currentAnimation->loop) {
@@ -54,6 +55,22 @@ void playerUpdate(flecs::iter it, Player *p, Velocity *v, CollisionVolume *c,
       g[i].isGrounded = false;
       hurtbox->active = true;
       return;
+    }
+    if (fire) {
+      const auto world = it.world();
+      const auto b = world.lookup("Ball");
+      const auto base_up_velocity = glm::vec2(0, -200.0f);
+      const auto ball_velocity =
+          glm::vec2(cos(dir_t->rotation), -sin(dir_t->rotation)) * 800.0f +
+          base_up_velocity;
+      const auto ball =
+          world.entity()
+              .is_a(b)
+              .set<Transform2D>(Transform2D().WithPosition(t[i].position))
+              .set<Velocity>({ball_velocity})
+              .set<Groundable>({false})
+              .set<LiveFor>({5.0f});
+      SDL_Log("fin ball");
     }
 
     // update animations

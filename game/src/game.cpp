@@ -67,6 +67,7 @@ int Game::init(SharedData *shared_data) {
   this->mixer = std::make_unique<Mixer>();
   this->textureAnya = std::make_shared<Texture>("assets/textures/amiibo.png");
   this->textureArrow = std::make_shared<Texture>("assets/textures/arrow.png");
+  this->textureBall = std::make_shared<Texture>("assets/textures/ball.png");
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
 
   this->spritesheet =
@@ -111,6 +112,17 @@ int Game::init(SharedData *shared_data) {
                             },
                             1));
 
+  const auto Ball =
+      world.prefab("Ball")
+          .set<Transform2D>(Transform2D(glm::vec2(0, 0), glm::vec2(1, 1), 0))
+          .set<Sprite>({this->textureBall})
+          .set<Velocity>({glm::vec2(0, 0)})
+          .set<Groundable>({false})
+          .set<CollisionVolume>({
+              glm::vec4(0, 0, 16, 16),
+          })
+          .set<LiveFor>({5.0f});
+
   const auto HpBar = world.prefab("UIFilledRect")
                          .set<Transform2D>(Transform2D(glm::vec2(0.0f, -15.0f),
                                                        glm::vec2(1, 1), 0))
@@ -121,7 +133,7 @@ int Game::init(SharedData *shared_data) {
   const auto DirectionArrow =
       world.prefab("DirectionIndicator")
           .set<Transform2D>(
-              Transform2D(glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 0))
+              Transform2D(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f), 0))
           .set<Sprite>({this->textureArrow});
 
   const auto TextArea =

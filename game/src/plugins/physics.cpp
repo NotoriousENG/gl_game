@@ -112,8 +112,20 @@ void runEntityCollisions(flecs::entity e1, Transform2D &t1, CollisionVolume &c1,
     }
   }
 }
+
+void dieOfOldAge(flecs::iter it, LiveFor *l) {
+  const auto dt = it.delta_time();
+  for (int i : it) {
+    l[i].seconds -= dt;
+    if (l[i].seconds <= 0) {
+      it.entity(i).destruct();
+    }
+  }
+}
+
 void PhysicsPlugin::addSystems(flecs::world &ecs) {
   Tilemap *map = ecs.get<Map>()->value;
+
   // gravity system
   ecs.system<Velocity, Groundable>().iter(
       [](flecs::iter it, Velocity *v, Groundable *g) {
@@ -139,4 +151,8 @@ void PhysicsPlugin::addSystems(flecs::world &ecs) {
           runEntityCollisions(e1, t1, c1, e2, t2, c2);
         });
       });
+
+  // die of old age system
+  ecs.system<LiveFor>().iter(
+      [](flecs::iter it, LiveFor *l) { dieOfOldAge(it, l); });
 }

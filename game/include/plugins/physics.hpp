@@ -39,6 +39,10 @@ struct Map {
   Tilemap *value;
 };
 
+struct LiveFor {
+  float seconds;
+};
+
 // utils:
 void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
                          Transform2D &t1, CollisionVolume &c1);
@@ -54,6 +58,8 @@ void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
 void runEntityCollisions(flecs::entity e1, Transform2D &t1, CollisionVolume &c1,
                          flecs::entity e2, Transform2D &t2,
                          CollisionVolume &c2);
+
+void dieOfOldAge(flecs::iter it, LiveFor *l);
 
 // plugin:
 class PhysicsPlugin : public Plugin {

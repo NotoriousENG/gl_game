@@ -23,6 +23,7 @@ public:
   std::unique_ptr<SpriteBatch> spriteBatcher;
   std::shared_ptr<Texture> textureAnya;
   std::shared_ptr<Texture> textureArrow;
+  std::shared_ptr<Texture> textureBall;
 
   std::shared_ptr<SpriteSheet> spritesheet;
 
