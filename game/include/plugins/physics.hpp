@@ -4,7 +4,6 @@
 #include <SDL.h>
 #include <components.hpp>
 #include <flecs.h>
-#include <tilemap.hpp>
 // components:
 struct Groundable {
   bool isGrounded;
@@ -35,10 +34,6 @@ struct Gravity {
   float value;
 };
 
-struct Map {
-  Tilemap *value;
-};
-
 struct LiveFor {
   float seconds;
 };
@@ -51,9 +46,6 @@ void push_rect_transform(const SDL_Rect &rect, const SDL_Rect &pushedBy,
 void applyGravity(flecs::iter it, Velocity *v, Groundable *g);
 
 void applyVelocity(flecs::iter it, Velocity *v, Transform2D *t);
-
-void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
-                    CollisionVolume &c, Groundable &g);
 
 void runEntityCollisions(flecs::entity e1, Transform2D &t1, CollisionVolume &c1,
                          flecs::entity e2, Transform2D &t2,

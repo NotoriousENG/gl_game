@@ -70,7 +70,6 @@ void playerUpdate(flecs::iter it, Player *p, Velocity *v, CollisionVolume *c,
               .set<Velocity>({ball_velocity})
               .set<Groundable>({false})
               .set<LiveFor>({5.0f});
-      SDL_Log("fin ball");
     }
 
     // update animations

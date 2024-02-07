@@ -1,4 +1,5 @@
 #include "plugins/camera.hpp"
+#include "plugins/map.hpp"
 #include "plugins/player.hpp"
 
 void CameraPlugin::addSystems(flecs::world &world) {

@@ -7,6 +7,7 @@
 #include <plugins/camera.hpp>
 #include <plugins/enemy.hpp>
 #include <plugins/graphics.hpp>
+#include <plugins/map.hpp>
 #include <plugins/physics.hpp>
 #include <plugins/player.hpp>
 #include <plugins/transform.hpp>
@@ -175,6 +176,7 @@ int Game::init(SharedData *shared_data) {
   PlayerPlugin().addSystems(this->world);
   EnemyPlugin().addSystems(this->world);
   PhysicsPlugin().addSystems(this->world);
+  MapPlugin().addSystems(this->world);
   CameraPlugin().addSystems(this->world);
   Transform2DPlugin().addSystems(this->world);
   GraphicsPlugin().addSystems(this->world);
