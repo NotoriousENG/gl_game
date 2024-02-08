@@ -70,6 +70,7 @@ int Game::init(SharedData *shared_data) {
   this->textureArrow = std::make_shared<Texture>("assets/textures/arrow.png");
   this->textureBall = std::make_shared<Texture>("assets/textures/ball.png");
   this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
+  this->tilemap2 = std::make_unique<Tilemap>("assets/tilemaps/demo2.tmx");
 
   this->spritesheet =
       std::make_shared<SpriteSheet>("assets/textures/spritesheet.atlas");
@@ -170,7 +171,7 @@ int Game::init(SharedData *shared_data) {
   world.set<Camera>({.position = glm::vec2(0, 0)});
   world.set<Gravity>({.value = 980.0f});
   world.set<Renderer>({.renderer = this->spriteBatcher.get()});
-  world.set<Map>({.value = this->tilemap.get()});
+  LoadLevel(this->world, this->tilemap.get());
 
   // Plugins
   PlayerPlugin().addSystems(this->world);
@@ -206,6 +207,12 @@ int Game::update() {
     }
   }
 
+  if (InputManager::GetKey(SDL_SCANCODE_F1).IsJustPressed()) {
+    this->level1 = !this->level1;
+    LoadLevel(this->world,
+              this->level1 ? this->tilemap.get() : this->tilemap2.get());
+  }
+
   this->world.progress();
 
   if (this->drawColliders) {
@@ -230,10 +237,9 @@ int Game::update() {
               color = glm::vec4(0, 0, 0, 0.5f);
             }
           }
-
           game->spriteBatcher->DrawRect(rect, color);
         });
-    this->tilemap->DrawColliders(this->spriteBatcher.get());
+    world.get<Map>()->value->DrawColliders(game->spriteBatcher.get());
   }
 
   // draw all sprites in the batch

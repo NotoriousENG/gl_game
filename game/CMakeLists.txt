@@ -25,7 +25,7 @@ add_library (${PROJECT_NAME} ${LIB_TYPE} "src/game.cpp"
   "src/plugins/graphics.cpp" "src/plugins/player.cpp" 
   "src/plugins/physics.cpp" "src/plugins/enemy.cpp" 
   "src/plugins/camera.cpp" "src/plugins/transform.cpp" 
-  "src/plugins/map.cpp"
+  "src/plugins/map.cpp" "src/prefabs.cpp"
   )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ../engine/include)

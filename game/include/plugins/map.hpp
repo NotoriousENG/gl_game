@@ -13,6 +13,8 @@ struct Map {
 void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
                     CollisionVolume &c, Groundable &g);
 
+void LoadLevel(flecs::world &ecs, Tilemap *map);
+
 // plugin:
 class MapPlugin : public Plugin {
 public:

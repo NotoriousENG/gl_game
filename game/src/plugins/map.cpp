@@ -26,11 +26,16 @@ void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
   }
 }
 
-void MapPlugin::addSystems(flecs::world &ecs) {
-  Tilemap *map = ecs.get<Map>()->value;
+void LoadLevel(flecs::world &ecs, Tilemap *map) { ecs.set<Map>({map}); }
 
+void MapPlugin::addSystems(flecs::world &ecs) {
   // collision for entities with tilemap
-  ecs.system<Transform2D, CollisionVolume, Groundable>().each(
-      [map](flecs::entity e, Transform2D &t, CollisionVolume &c,
-            Groundable &g) { collideWithMap(map, e, t, c, g); });
+  ecs.system<Transform2D, CollisionVolume, Groundable>().iter(
+      [](flecs::iter it, Transform2D *t, CollisionVolume *c, Groundable *g) {
+        Tilemap *map = it.world().get<Map>()->value;
+        for (int i = 0; i < it.count(); i++) {
+          flecs::entity e = it.entity(i);
+          collideWithMap(map, e, t[i], c[i], g[i]);
+        }
+      });
 }

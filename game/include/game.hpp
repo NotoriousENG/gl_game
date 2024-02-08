@@ -28,7 +28,10 @@ public:
   std::shared_ptr<SpriteSheet> spritesheet;
 
   std::unique_ptr<Tilemap> tilemap;
+  std::unique_ptr<Tilemap> tilemap2;
   flecs::world world;
+
+  bool level1 = true;
 
   std::unique_ptr<Font> fontL;
   std::unique_ptr<Font> fontS;
