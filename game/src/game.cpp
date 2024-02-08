@@ -213,6 +213,19 @@ int Game::update() {
               this->level1 ? this->tilemap.get() : this->tilemap2.get());
   }
 
+#ifdef SHARED_GAME
+  if (InputManager::GetKey(SDL_SCANCODE_F5).IsJustPressed()) {
+    // hot reload assets
+    // copy tilemap into tempTilemap
+    std::unique_ptr<Tilemap> tempTilemap = std::move(this->tilemap);
+    this->tilemap = std::make_unique<Tilemap>("../../assets/tilemaps/demo.tmx");
+    this->tilemap2 =
+        std::make_unique<Tilemap>("../../assets/tilemaps/demo2.tmx");
+    this->world.set<Map>(
+        {this->level1 ? this->tilemap.get() : this->tilemap2.get()});
+  }
+#endif
+
   this->world.progress();
 
   if (this->drawColliders) {
