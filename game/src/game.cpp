@@ -80,16 +80,18 @@ int Game::init(SharedData *shared_data) {
   this->fontS = std::make_unique<Font>(RES_FONT_VERA, 14);
 
   music->play_on_loop();
-  this->mixer->ToggleMute();
 
+#ifndef EMSCRIPTEN
+  this->mixer->ToggleMute();
+#endif
   // prefabs
   const auto Tink =
       world.prefab("Tink")
           .set<Transform2D>(Transform2D(glm::vec2(80, 400), glm::vec2(1, 1), 0))
           .set<AnimatedSprite>(
               AnimatedSprite(spritesheet, spritesheet->GetAnimation("Idle")))
-          .set<Player>(
-              {"Player 1", false, soundEffect, spritesheet->GetAtlasRect(0)})
+          .set<Player>({"Player 1", false, soundEffect, music,
+                        spritesheet->GetAtlasRect(0)})
           .set<Velocity>({glm::vec2(0, 0)})
           .set<CollisionVolume>({glm::vec4(3, 7, 39, 39)})
           .set<Groundable>({false})
