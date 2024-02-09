@@ -1,5 +1,7 @@
 #include "game.hpp"
+#include "resource-paths.hpp"
 #include <SDL.h>
+#include <asset-manager.hpp>
 #include <components.hpp>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -60,38 +62,34 @@ int Game::init(SharedData *shared_data) {
 
   // map the text_input_buffer
   InputManager::SetTextInputBuffer(&shared_data->text_input_buffer[0]);
-
   // Get current window size
   int w, h;
   SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
   this->spriteBatcher = std::make_unique<SpriteBatch>(glm::vec2(w, h));
   this->mixer = std::make_unique<Mixer>();
-  this->textureAnya = std::make_shared<Texture>("assets/textures/amiibo.png");
-  this->textureArrow = std::make_shared<Texture>("assets/textures/arrow.png");
-  this->textureBall = std::make_shared<Texture>("assets/textures/ball.png");
-  this->tilemap = std::make_unique<Tilemap>("assets/tilemaps/demo.tmx");
-  this->tilemap2 = std::make_unique<Tilemap>("assets/tilemaps/demo2.tmx");
+  auto textureAnya = AssetManager<Texture>::get(RES_TEXTURE_AMIIBO);
+  auto textureArrow = AssetManager<Texture>::get(RES_TEXTURE_ARROW);
+  auto textureBall = AssetManager<Texture>::get(RES_TEXTURE_BALL);
+  auto tilemap = AssetManager<Tilemap>::get(RES_TILEMAP_DEMO);
+  auto tilemap2 = AssetManager<Tilemap>::get(RES_TILEMAP_DEMO2);
+  auto spritesheet = AssetManager<SpriteSheet>::get(RES_SHEET_PLAYER);
+  auto music = AssetManager<Music>::get(RES_MUSIC_PLEASANT_CREEK);
+  auto soundEffect = AssetManager<SoundEffect>::get(RES_SFX_MEOW);
 
-  this->spritesheet =
-      std::make_shared<SpriteSheet>("assets/textures/spritesheet.atlas");
+  this->fontL = std::make_unique<Font>(RES_FONT_VERA, 32);
+  this->fontS = std::make_unique<Font>(RES_FONT_VERA, 14);
 
-  this->fontL = std::make_unique<Font>("assets/fonts/Vera.ttf", 32);
-  this->fontS = std::make_unique<Font>("assets/fonts/Vera.ttf", 14);
-
-  this->music = std::make_unique<Music>("assets/music/Pleasant_Creek_Loop.ogg");
-  this->soundEffect = std::make_unique<SoundEffect>("assets/sfx/meow.ogg");
-
-  this->music->play_on_loop();
+  music->play_on_loop();
   this->mixer->ToggleMute();
 
   // prefabs
   const auto Tink =
       world.prefab("Tink")
           .set<Transform2D>(Transform2D(glm::vec2(80, 400), glm::vec2(1, 1), 0))
-          .set<AnimatedSprite>(AnimatedSprite(
-              this->spritesheet, this->spritesheet->GetAnimation("Idle")))
-          .set<Player>({"Player 1", false, this->soundEffect.get(),
-                        this->spritesheet->GetAtlasRect(0)})
+          .set<AnimatedSprite>(
+              AnimatedSprite(spritesheet, spritesheet->GetAnimation("Idle")))
+          .set<Player>(
+              {"Player 1", false, soundEffect, spritesheet->GetAtlasRect(0)})
           .set<Velocity>({glm::vec2(0, 0)})
           .set<CollisionVolume>({glm::vec4(3, 7, 39, 39)})
           .set<Groundable>({false})
@@ -100,7 +98,7 @@ int Game::init(SharedData *shared_data) {
   const auto Anya = world.prefab("Anya")
                         .set<Transform2D>(Transform2D(glm::vec2(300, 510),
                                                       glm::vec2(1, 1), 0))
-                        .set<Sprite>({this->textureAnya})
+                        .set<Sprite>({textureAnya})
                         .set<Velocity>({glm::vec2(0, 0)})
                         .set<CollisionVolume>({
                             glm::vec4(0, 32, 64, 64),
@@ -117,7 +115,7 @@ int Game::init(SharedData *shared_data) {
   const auto Ball =
       world.prefab("Ball")
           .set<Transform2D>(Transform2D(glm::vec2(0, 0), glm::vec2(1, 1), 0))
-          .set<Sprite>({this->textureBall})
+          .set<Sprite>({textureBall})
           .set<Velocity>({glm::vec2(0, 0)})
           .set<Groundable>({false})
           .set<CollisionVolume>({
@@ -136,7 +134,7 @@ int Game::init(SharedData *shared_data) {
       world.prefab("DirectionIndicator")
           .set<Transform2D>(
               Transform2D(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f), 0))
-          .set<Sprite>({this->textureArrow});
+          .set<Sprite>({textureArrow});
 
   const auto TextArea =
       world.prefab("textArea")
@@ -171,7 +169,7 @@ int Game::init(SharedData *shared_data) {
   world.set<Camera>({.position = glm::vec2(0, 0)});
   world.set<Gravity>({.value = 980.0f});
   world.set<Renderer>({.renderer = this->spriteBatcher.get()});
-  LoadLevel(this->world, this->tilemap.get());
+  LoadLevel(this->world, tilemap);
 
   // Plugins
   PlayerPlugin().addSystems(this->world);
@@ -209,20 +207,20 @@ int Game::update() {
 
   if (InputManager::GetKey(SDL_SCANCODE_F1).IsJustPressed()) {
     this->level1 = !this->level1;
-    LoadLevel(this->world,
-              this->level1 ? this->tilemap.get() : this->tilemap2.get());
+    LoadLevel(this->world, this->level1
+                               ? AssetManager<Tilemap>::get(RES_TILEMAP_DEMO)
+                               : AssetManager<Tilemap>::get(RES_TILEMAP_DEMO2));
   }
 
 #ifdef SHARED_GAME
   if (InputManager::GetKey(SDL_SCANCODE_F5).IsJustPressed()) {
+    std::string path = "../../";
+    std::string demoPath = path + RES_TILEMAP_DEMO;
+    std::string demo2Path = path + RES_TILEMAP_DEMO2;
     // hot reload assets
-    // copy tilemap into tempTilemap
-    std::unique_ptr<Tilemap> tempTilemap = std::move(this->tilemap);
-    this->tilemap = std::make_unique<Tilemap>("../../assets/tilemaps/demo.tmx");
-    this->tilemap2 =
-        std::make_unique<Tilemap>("../../assets/tilemaps/demo2.tmx");
-    this->world.set<Map>(
-        {this->level1 ? this->tilemap.get() : this->tilemap2.get()});
+    LoadLevel(this->world, this->level1
+                               ? AssetManager<Tilemap>::get(demoPath.c_str())
+                               : AssetManager<Tilemap>::get(demo2Path.c_str()));
   }
 #endif
 
@@ -230,27 +228,33 @@ int Game::update() {
 
   if (this->drawColliders) {
     // Draw colliders
-    world.query<Transform2D, CollisionVolume>().each(
-        [](flecs::entity e, Transform2D &t, CollisionVolume &c) {
-          // the rect is the vertices with the position offset
-          const auto rect =
-              c.vertices + glm::vec4(t.global_position.x, t.global_position.y,
-                                     -c.vertices.x, -c.vertices.y);
-          const bool isGrounded =
-              e.has<Groundable>() && e.get<Groundable>()->isGrounded;
+    world.query<Transform2D, CollisionVolume>().iter(
+        [](flecs::iter it, Transform2D *tl, CollisionVolume *cl) {
+          for (int i : it) {
+            const auto e = it.entity(i);
+            const auto c = cl[i];
+            const auto t = tl[i];
+            const auto world = it.world();
+            // the rect is the vertices with the position offset
+            const auto rect =
+                c.vertices + glm::vec4(t.global_position.x, t.global_position.y,
+                                       -c.vertices.x, -c.vertices.y);
+            const bool isGrounded =
+                e.has<Groundable>() && e.get<Groundable>()->isGrounded;
 
-          auto color = isGrounded ? glm::vec4(1, 0, 0, 0.5f)
-                                  : (game->tilemap->HasCollision(e)
-                                         ? glm::vec4(0, 1, 0, 0.5f)
-                                         : glm::vec4(0, 0, 1, 0.5f));
-          if (e.has<Hurtbox>()) {
-            if (e.get<Hurtbox>()->active) {
-              color = glm::vec4(1, 1, 0, 0.5f);
-            } else {
-              color = glm::vec4(0, 0, 0, 0.5f);
+            auto color = isGrounded ? glm::vec4(1, 0, 0, 0.5f)
+                                    : (world.get<Map>()->value->HasCollision(e)
+                                           ? glm::vec4(0, 1, 0, 0.5f)
+                                           : glm::vec4(0, 0, 1, 0.5f));
+            if (e.has<Hurtbox>()) {
+              if (e.get<Hurtbox>()->active) {
+                color = glm::vec4(1, 1, 0, 0.5f);
+              } else {
+                color = glm::vec4(0, 0, 0, 0.5f);
+              }
             }
+            game->spriteBatcher->DrawRect(rect, color);
           }
-          game->spriteBatcher->DrawRect(rect, color);
         });
     world.get<Map>()->value->DrawColliders(game->spriteBatcher.get());
   }

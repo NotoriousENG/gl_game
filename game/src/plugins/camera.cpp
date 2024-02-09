@@ -14,7 +14,7 @@ void CameraPlugin::addSystems(flecs::world &world) {
       c[0].position = t.position + offset;
     });
 
-    Tilemap *m = it.world().get<Map>()->value;
+    Tilemap *m = it.world().get<Map>()->value.get();
     SpriteBatch *r = it.world().get<Renderer>()->renderer;
 
     r->UpdateCamera(c[0].position, m->GetBounds());

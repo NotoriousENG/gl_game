@@ -6,14 +6,14 @@
 
 // components:
 struct Map {
-  Tilemap *value;
+  std::shared_ptr<Tilemap> value;
 };
 
 // systems:
 void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
                     CollisionVolume &c, Groundable &g);
 
-void LoadLevel(flecs::world &ecs, Tilemap *map);
+void LoadLevel(flecs::world &ecs, std::shared_ptr<Tilemap> map);
 
 // plugin:
 class MapPlugin : public Plugin {

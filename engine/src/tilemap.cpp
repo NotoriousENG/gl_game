@@ -1,5 +1,6 @@
 #include "tilemap.hpp"
 #include "SDL2/SDL_log.h"
+#include "asset-manager.hpp"
 #include "defs.hpp"
 #include "glad/glad.h"
 
@@ -10,7 +11,7 @@ Tilemap::Tilemap(const char *path) {
   const auto &tilesets = map.getTilesets();
   for (const auto &ts : tilesets) {
     this->textures.push_back(
-        std::make_shared<Texture>(ts.getImagePath().c_str()));
+        AssetManager<Texture>::get(ts.getImagePath().c_str()));
   }
 }
 
