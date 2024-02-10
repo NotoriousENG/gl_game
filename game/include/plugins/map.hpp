@@ -15,6 +15,8 @@ void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
 
 void LoadLevel(flecs::world &ecs, std::shared_ptr<Tilemap> map);
 
+void DrawColliders(flecs::world &ecs, SpriteBatch *sb);
+
 // plugin:
 class MapPlugin : public Plugin {
 public:

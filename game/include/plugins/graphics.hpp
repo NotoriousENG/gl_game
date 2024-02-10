@@ -62,14 +62,14 @@ struct UIFilledRect {
 };
 
 struct AdjustingTextBox {
-  Font *font;
+  std::shared_ptr<Font> font;
   const char *text;
   float t;
   float duration;
 
   AdjustingTextBox() : font(nullptr), text(""), t(0), duration(0) {}
 
-  AdjustingTextBox(Font *font, const char *text, float duration)
+  AdjustingTextBox(std::shared_ptr<Font> font, const char *text, float duration)
       : font(font), text(text), t(0), duration(duration) {}
 };
 

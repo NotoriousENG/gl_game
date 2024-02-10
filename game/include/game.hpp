@@ -25,8 +25,6 @@ public:
 
   bool level1 = true;
 
-  std::unique_ptr<Font> fontL;
-  std::unique_ptr<Font> fontS;
   std::unique_ptr<Mixer> mixer;
 
   bool drawColliders = false;
