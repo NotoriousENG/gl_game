@@ -1,6 +1,18 @@
 #include "plugins/map.hpp"
-#include "plugins/physics.hpp"
+
 #include <memory>
+
+#include "resource-paths.hpp"
+#include <asset-manager.hpp>
+
+#include <plugins/camera.hpp>
+#include <plugins/enemy.hpp>
+#include <plugins/graphics.hpp>
+#include <plugins/map.hpp>
+#include <plugins/physics.hpp>
+#include <plugins/player.hpp>
+#include <plugins/transform.hpp>
+#include <prefabs.hpp>
 
 void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
                     CollisionVolume &c, Groundable &g) {
@@ -28,7 +40,51 @@ void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
 }
 
 void LoadLevel(flecs::world &ecs, std::shared_ptr<Tilemap> map) {
+  auto sb = ecs.get<Renderer>()->renderer;
+  ecs.reset();
+  ecs.reset();
+  ecs.set_time_scale(0.0f);
+  ecs.set<Camera>({.position = glm::vec2(0, 0)});
+  ecs.set<Gravity>({.value = 980.0f});
+  ecs.set<Renderer>({.renderer = sb});
   ecs.set<Map>({map});
+
+  // Plugins
+  PlayerPlugin().addSystems(ecs);
+  EnemyPlugin().addSystems(ecs);
+  PhysicsPlugin().addSystems(ecs);
+  MapPlugin().addSystems(ecs);
+  CameraPlugin().addSystems(ecs);
+  Transform2DPlugin().addSystems(ecs);
+  GraphicsPlugin().addSystems(ecs);
+
+  // @todo: write a fn to spawn entities in level
+  SpawnAnya(ecs, glm::vec2(300, 510),
+            Path(
+                {
+                    glm::vec2(300, 511),
+                    glm::vec2(700, 511),
+                },
+                1));
+  SpawnAnya(ecs, glm::vec2(200, 510),
+            Path(
+                {
+                    glm::vec2(200, 511),
+                    glm::vec2(500, 511),
+                },
+                1));
+
+  SpawnAnya(ecs, glm::vec2(400, 510),
+            Path(
+                {
+                    glm::vec2(400, 511),
+                    glm::vec2(600, 511),
+                },
+                1));
+  SpawnPlayer(ecs, glm::vec2(30, 0));
+
+  // set flecs time to 1 since we are done loading
+  ecs.set_time_scale(1.0f);
 }
 
 void DrawColliders(flecs::world &ecs, SpriteBatch *sb) {

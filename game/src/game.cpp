@@ -6,14 +6,9 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <input.hpp>
-#include <plugins/camera.hpp>
-#include <plugins/enemy.hpp>
 #include <plugins/graphics.hpp>
 #include <plugins/map.hpp>
-#include <plugins/physics.hpp>
-#include <plugins/player.hpp>
-#include <plugins/transform.hpp>
-#include <prefabs.hpp>
+
 #include <utils.hpp>
 
 static Game *game; // this is dirty but it works for now
@@ -49,17 +44,13 @@ CR_EXPORT int cr_main(struct cr_plugin *ctx, enum cr_op operation) {
 }
 #endif
 
-Game::Game() {
-  game = this;
-  world.set_time_scale(0.0f); // stop time while loading
-}
+Game::Game() { game = this; }
 
 Game::~Game() {}
 
 int Game::init(SharedData *shared_data) {
   SDL_Log("Game init");
   SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(), "Tink's World");
-  world.set_time_scale(0.0f); // stop time while loading
 
   // map the text_input_buffer
   InputManager::SetTextInputBuffer(&shared_data->text_input_buffer[0]);
@@ -73,27 +64,9 @@ int Game::init(SharedData *shared_data) {
   this->mixer->ToggleMute();
 #endif
 
-  world.set<Camera>({.position = glm::vec2(0, 0)});
-  world.set<Gravity>({.value = 980.0f});
-  world.set<Renderer>({.renderer = this->spriteBatcher.get()});
-
-  SpawnAnya(world, glm::vec2(300, 510));
-  SpawnPlayer(world, glm::vec2(30, 0));
-
   const auto tilemap = AssetManager<Tilemap>::get(RES_TILEMAP_DEMO);
+  world.set<Renderer>({.renderer = this->spriteBatcher.get()});
   LoadLevel(this->world, tilemap);
-
-  // Plugins
-  PlayerPlugin().addSystems(this->world);
-  EnemyPlugin().addSystems(this->world);
-  PhysicsPlugin().addSystems(this->world);
-  MapPlugin().addSystems(this->world);
-  CameraPlugin().addSystems(this->world);
-  Transform2DPlugin().addSystems(this->world);
-  GraphicsPlugin().addSystems(this->world);
-
-  // set flecs time to 1 since we are done loading
-  world.set_time_scale(1.0f);
 
   return 0;
 }
@@ -122,6 +95,7 @@ int Game::update() {
     LoadLevel(this->world, this->level1
                                ? AssetManager<Tilemap>::get(RES_TILEMAP_DEMO)
                                : AssetManager<Tilemap>::get(RES_TILEMAP_DEMO2));
+    return 0;
   }
 
 #ifdef SHARED_GAME
@@ -133,6 +107,7 @@ int Game::update() {
     LoadLevel(this->world, this->level1
                                ? AssetManager<Tilemap>::get(demoPath.c_str())
                                : AssetManager<Tilemap>::get(demo2Path.c_str()));
+    return 0;
   }
 #endif
 

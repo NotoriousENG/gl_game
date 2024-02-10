@@ -82,9 +82,9 @@ void SpawnPlayer(flecs::world &ecs, glm::vec2 pos) {
           .set<Hurtbox>({1.0f, false});
 }
 
-void SpawnAnya(flecs::world &ecs, glm::vec2 pos) {
+void SpawnAnya(flecs::world &ecs, glm::vec2 pos, Path path) {
   const auto textureAnya = AssetManager<Texture>::get(RES_TEXTURE_AMIIBO);
-  const auto Anya = ecs.prefab("Anya")
+  const auto Anya = ecs.entity()
                         .set<Transform2D>(Transform2D(pos, glm::vec2(1, 1), 0))
                         .set<Sprite>({textureAnya})
                         .set<Velocity>({glm::vec2(0, 0)})
@@ -93,15 +93,5 @@ void SpawnAnya(flecs::world &ecs, glm::vec2 pos) {
                         })
                         .set<Health>({1.0f})
                         .set<Enemy>(Enemy())
-                        .set<Path>(Path(
-                            {
-                                glm::vec2(300, 511),
-                                glm::vec2(700, 511),
-                            },
-                            1));
-
-  // create anya
-  // add 1 anya per 64 units on x
-  std::string anya_name = "anya";
-  ecs.entity(anya_name.c_str()).is_a(Anya);
+                        .set<Path>(path);
 }
