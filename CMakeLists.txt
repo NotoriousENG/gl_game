@@ -5,6 +5,8 @@ cmake_minimum_required (VERSION 3.12)
 
 project ("GlGame")
 
+set(NO_TESTS ON)
+
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     add_compile_definitions("EMSCRIPTEN")
     
