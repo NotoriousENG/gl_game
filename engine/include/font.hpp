@@ -12,6 +12,8 @@
 
 #include <unordered_map>
 
+typedef unsigned int uint;
+
 struct Glyph {
   glm::vec2 offset;
   glm::ivec2 size;
@@ -38,5 +40,5 @@ private:
   std::unordered_map<char, Glyph> glyphs;
 
   GLuint tex;
-  const int texDim = 512;
+  int texDim = 512;
 };

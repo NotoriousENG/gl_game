@@ -32,8 +32,7 @@ Font::Font(const char *path, int size) {
   int row = 0;
   int col = padding;
 
-  char texData[this->texDim * this->texDim * 4];
-  memset(texData, 0, sizeof(texData)); // VLAs can't be initialized in em++ :/
+  std::vector<char> texData(this->texDim * this->texDim * 4, 0);
 
   // Load glyphs from the ASCII set (ASCII 32 - 126)
   for (FT_ULong ascii = ASCII_OFFSET; ascii <= ASCII_EXTENDED_MAX; ++ascii) {
@@ -116,7 +115,7 @@ Font::Font(const char *path, int size) {
 
   // @TODO: make shader work with red on black
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->texDim, this->texDim, 0,
-               GL_RGBA, GL_UNSIGNED_BYTE, (char *)texData);
+               GL_RGBA, GL_UNSIGNED_BYTE, &texData[0]);
 }
 
 void Font::RenderText(SpriteBatch *renderer, const char *text,

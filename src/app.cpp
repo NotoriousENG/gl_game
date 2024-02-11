@@ -36,6 +36,7 @@ void App::run() {
   SDL_StopTextInput(); // ensure this is off by default
 
 #ifdef SHARED_GAME
+  SDL_Log("Shared Lib: %s", GAME_LIBRARY_PATH);
   cr_plugin_open(this->game_ctx, GAME_LIBRARY_PATH);
   this->game_ctx.userdata = &this->shared_data;
 #else

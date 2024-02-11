@@ -17,16 +17,15 @@ I highly recommend setting your ide formatter to use clang format,
 You can build for multiple platforms using CMake, you will need the following installed to link for your platform of choice
 
 - SDL2
-- SDL2-image
 - SDL2-mixer
-- SDL2-ttf
 - libvorbis
 - libssl-dev (openssl for vcpkg)
-- glm (this is handled as a [submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules) )
+- please run [git submodule update --init --recursive](https://git-scm.com/book/en/v2/Git-Tools-Submodules) before building to pull other dependencies
 
 ### Windows
 
 - You can install dependencies using [vcpkg](https://github.com/microsoft/vcpkg)
+- It looks like vcpkg toolchain has updated: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started-vscode?pivots=shell-cmd 
 - Open Project in Visual Studio (cmake support installed)
 - Build
 - Run GlGame.exe

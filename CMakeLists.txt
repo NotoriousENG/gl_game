@@ -24,6 +24,9 @@ else()
     if(UNIX)
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     endif()
+    if (WIN32)
+        option(WIN_VSCODE_APPEND_CONFIG "Use default vscode structure, not VS2022" OFF) # when distributing, set to OFF
+    endif()
 endif()
 
 # log if we are building shared or static libraries
@@ -38,8 +41,13 @@ endif()
 if(BUILD_SHARED_LIBS)
   add_compile_definitions(SHARED_GAME=1)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}) # simplify testing for shared libs
+  #if using visual studio
   if (WIN32)
-    set(GAME_LIBRARY_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    if (WIN_VSCODE_APPEND_CONFIG)
+        set(GAME_LIBRARY_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}") # VSCode
+    else()
+        set(GAME_LIBRARY_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}") # Visual Studio
+    endif()
   else()
     set(GAME_LIBRARY_PATH "${CMAKE_BINARY_DIR}/game/${CMAKE_SHARED_LIBRARY_PREFIX}game${CMAKE_SHARED_LIBRARY_SUFFIX}")
   endif()
