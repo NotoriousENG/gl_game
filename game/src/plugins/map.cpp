@@ -5,6 +5,8 @@
 #include "resource-paths.hpp"
 #include <asset-manager.hpp>
 
+#include <asset-manager-aggregates.hpp>
+
 #include <plugins/camera.hpp>
 #include <plugins/enemy.hpp>
 #include <plugins/graphics.hpp>
@@ -40,6 +42,8 @@ void collideWithMap(Tilemap *map, flecs::entity e, Transform2D &t,
 }
 
 void LoadLevel(flecs::world &ecs, std::shared_ptr<Tilemap> map) {
+  LockAllAssets();
+
   auto sb = ecs.get<Renderer>()->renderer;
   ecs.reset();
   ecs.reset();
@@ -82,6 +86,8 @@ void LoadLevel(flecs::world &ecs, std::shared_ptr<Tilemap> map) {
                 },
                 1));
   SpawnPlayer(ecs, glm::vec2(30, 0));
+
+  UnlockAllAssets();
 
   // set flecs time to 1 since we are done loading
   ecs.set_time_scale(1.0f);
