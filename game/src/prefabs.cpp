@@ -19,17 +19,16 @@ void SpawnPlayer(flecs::world &ecs, glm::vec2 pos) {
 
   music->play_on_loop();
 
-  const auto Tink =
-      ecs.prefab("Tink")
-          .set<Transform2D>(Transform2D(glm::vec2(80, 400), glm::vec2(1, 1), 0))
-          .set<AnimatedSprite>(
-              AnimatedSprite(spritesheet, spritesheet->GetAnimation("Idle")))
-          .set<Player>({"Player 1", false, soundEffect, music,
-                        spritesheet->GetAtlasRect(0)})
-          .set<Velocity>({glm::vec2(0, 0)})
-          .set<CollisionVolume>({glm::vec4(3, 7, 39, 39)})
-          .set<Groundable>({false})
-          .add<PhysicsBody>();
+  const auto Tink = ecs.prefab("Tink")
+                        .set<Transform2D>(Transform2D(pos, glm::vec2(1, 1), 0))
+                        .set<AnimatedSprite>(AnimatedSprite(
+                            spritesheet, spritesheet->GetAnimation("Idle")))
+                        .set<Player>({"Player 1", false, soundEffect, music,
+                                      spritesheet->GetAtlasRect(0)})
+                        .set<Velocity>({glm::vec2(0, 0)})
+                        .set<CollisionVolume>({glm::vec4(3, 7, 39, 39)})
+                        .set<Groundable>({false})
+                        .add<PhysicsBody>();
 
   const auto Ball =
       ecs.prefab("Ball")

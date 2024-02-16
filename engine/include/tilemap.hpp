@@ -19,11 +19,16 @@ public:
   void DrawColliders(SpriteBatch *spriteBatch);
   void IsCollidingWith(SDL_Rect *other, SDL_Rect &found, flecs::entity entity,
                        bool &isGrounded);
+
+  std::vector<tmx::Object> GetObjects();
+  tmx::Object GetObjectByHandle(const int handle);
   SDL_Rect GetBounds();
 
   bool HasCollision(flecs::entity entity);
 
 private:
+  void initObjects();
   tmx::Map map;
+  std::vector<tmx::Object> objects;
   std::set<flecs::entity> entitiesCollidingWithMap;
 };

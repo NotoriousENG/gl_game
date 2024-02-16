@@ -62,30 +62,37 @@ void LoadLevel(flecs::world &ecs, std::shared_ptr<Tilemap> map) {
   Transform2DPlugin().addSystems(ecs);
   GraphicsPlugin().addSystems(ecs);
 
-  // @todo: write a fn to spawn entities in level
-  SpawnAnya(ecs, glm::vec2(300, 510),
-            Path(
-                {
-                    glm::vec2(300, 511),
-                    glm::vec2(700, 511),
-                },
-                1));
-  SpawnAnya(ecs, glm::vec2(200, 510),
-            Path(
-                {
-                    glm::vec2(200, 511),
-                    glm::vec2(500, 511),
-                },
-                1));
+  const auto objects = map->GetObjects();
 
-  SpawnAnya(ecs, glm::vec2(400, 510),
-            Path(
-                {
-                    glm::vec2(400, 511),
-                    glm::vec2(600, 511),
-                },
-                1));
-  SpawnPlayer(ecs, glm::vec2(30, 0));
+  const auto mapHeight = map->GetBounds().h;
+  for (const auto &object : objects) {
+    const auto pos = glm::vec2(object.getPosition().x, object.getPosition().y);
+    if (object.getClass() == "PLAYER") {
+      SDL_Log("Spawning player at %f, %f", pos.x, pos.y);
+      SpawnPlayer(ecs, pos);
+    } else if (object.getClass() == "ANYA") {
+      SDL_Log("Spawning Anya at %f, %f", pos.x, pos.y);
+      // get properties that are objects
+      const auto properties = object.getProperties();
+      Path path = Path({pos}, 1);
+      for (const auto &property : properties) {
+        if (property.getName() == "path") {
+          const auto pathHandle = property.getObjectValue();
+          const auto pathObject = map->GetObjectByHandle(pathHandle);
+          const auto pathPoints = pathObject.getPoints();
+          const auto pathPos =
+              glm::vec2(pathObject.getPosition().x, pathObject.getPosition().y);
+          std::vector<glm::vec2> points;
+          for (const auto &pp : pathPoints) {
+            const glm::vec2 point = {pp.x + pathPos.x, pp.y + pathPos.y};
+            points.push_back(point);
+          }
+          path = Path(points, 1);
+        }
+      }
+      SpawnAnya(ecs, pos, path);
+    }
+  }
 
   UnlockAllAssets();
 

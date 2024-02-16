@@ -13,6 +13,8 @@ Tilemap::Tilemap(const char *path) {
     this->textures.push_back(
         AssetManager<Texture>::get(ts.getImagePath().c_str()));
   }
+
+  this->initObjects();
 }
 
 Tilemap::~Tilemap() {}
@@ -210,6 +212,16 @@ void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
   }
 }
 
+std::vector<tmx::Object> Tilemap::GetObjects() { return this->objects; }
+
+tmx::Object Tilemap::GetObjectByHandle(const int handle) {
+  for (const auto &object : this->objects) {
+    if (object.getUID() == handle) {
+      return object;
+    }
+  }
+}
+
 SDL_Rect Tilemap::GetBounds() {
   return {0, 0, static_cast<int>(map.getTileSize().x * map.getTileCount().x),
           static_cast<int>(map.getTileSize().y * map.getTileCount().y)};
@@ -218,4 +230,19 @@ SDL_Rect Tilemap::GetBounds() {
 bool Tilemap::HasCollision(flecs::entity entity) {
   return entitiesCollidingWithMap.find(entity) !=
          entitiesCollidingWithMap.end();
+}
+
+void Tilemap::initObjects() {
+  this->objects.clear();
+  for (const auto &layer : map.getLayers()) {
+    if (layer->getType() != tmx::Layer::Type::Object) {
+      continue;
+    }
+    // SDL_Log("Object layer: %s", layer->getName().c_str());
+    const auto objectLayer = layer->getLayerAs<tmx::ObjectGroup>();
+    for (const auto &object : objectLayer.getObjects()) {
+      SDL_Log("Object: %s", object.getName().c_str());
+      this->objects.push_back(object);
+    }
+  }
 }
