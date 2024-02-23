@@ -67,8 +67,6 @@ else()
 endif()
 
 # self published libraries
-target_include_directories(${PROJECT_NAME} PUBLIC ${GLAD_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC glad)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC flecs::flecs_static)
 
@@ -76,16 +74,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${TMX_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC tmxlite)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLM_INCLUDE_DIRS})
-
-target_include_directories(${PROJECT_NAME} PUBLIC ${JSON_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
-
-# dependencies
-target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_LIBRARIES})
-
-target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_MIXER_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_MIXER_LIBRARIES}) # ensure sdl2-mixer "extensions" are installed for .ogg: https://www.reddit.com/r/cataclysmdda/comments/glxgtb/fix_for_sound_problem_when_compiling_in_windows/
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/modules/input/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC input)
