@@ -1,8 +1,6 @@
 #pragma once
 #include <ft2build.h>
 
-#include "defs.hpp"
-
 #include FT_FREETYPE_H
 
 #include <glad/glad.h>
@@ -11,6 +9,10 @@
 #include "sprite-batch.hpp"
 
 #include <unordered_map>
+
+#define ASCII_OFFSET 32
+#define ASCII_MAX 126
+#define ASCII_EXTENDED_MAX 255
 
 typedef unsigned int uint;
 

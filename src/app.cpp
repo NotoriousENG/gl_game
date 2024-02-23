@@ -2,7 +2,6 @@
 
 #include "app.hpp"
 
-#include <defs.hpp>
 #include <glm/glm.hpp>
 
 #include <stdio.h>
