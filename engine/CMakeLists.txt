@@ -33,12 +33,18 @@ add_subdirectory(lib/tmxlite/tmxlite)
 
 add_subdirectory(lib/json)
 
+# set GLM_INCLUDE_DIRS to the include directory of glm
+set(GLM_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
+
+# add the input library
+add_subdirectory(modules/input)
+
 # project includes
 include_directories(include)
 
 # add the library
 add_library (${PROJECT_NAME} STATIC "src/renderer.cpp" 
-    "src/window.cpp" "src/input.cpp" "src/shader.cpp" "src/texture.cpp" 
+    "src/window.cpp" "src/shader.cpp" "src/texture.cpp" 
     "src/sprite-batch.cpp" "src/tilemap.cpp" 
     "src/spritesheet.cpp" "src/font.cpp" "src/mixer.cpp"
     "src/asset-manager-aggregates.cpp"
@@ -66,7 +72,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC flecs::flecs_static)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/tmxlite/tmxlite/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC tmxlite)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
+target_include_directories(${PROJECT_NAME} PUBLIC ${GLM_INCLUDE_DIRS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lib/json/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json)
@@ -80,3 +86,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_MIXER_LIBRARIES}) # ensure s
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/modules/input/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC input)
