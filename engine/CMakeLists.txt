@@ -36,8 +36,9 @@ add_subdirectory(lib/json)
 # set GLM_INCLUDE_DIRS to the include directory of glm
 set(GLM_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}/lib/glm)
 
-# add the input library
+# add engine modules
 add_subdirectory(modules/input)
+add_subdirectory(modules/mixer)
 
 # project includes
 include_directories(include)
@@ -46,7 +47,7 @@ include_directories(include)
 add_library (${PROJECT_NAME} STATIC "src/renderer.cpp" 
     "src/window.cpp" "src/shader.cpp" "src/texture.cpp" 
     "src/sprite-batch.cpp" "src/tilemap.cpp" 
-    "src/spritesheet.cpp" "src/font.cpp" "src/mixer.cpp"
+    "src/spritesheet.cpp" "src/font.cpp"
     "src/asset-manager-aggregates.cpp"
 )
 
@@ -89,3 +90,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/modules/input/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC input)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/modules/mixer/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC mixer)

@@ -3,6 +3,8 @@
 #include <SDL_mixer.h>
 #include <memory>
 
+#define MAX_SOUND_CHANNELS 8
+
 class Mixer {
 public:
   Mixer();

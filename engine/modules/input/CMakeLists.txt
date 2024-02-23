@@ -7,13 +7,6 @@ project ("input")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-    # if CLANG/ GCC use GNU99 (This ensures that aflecs ddons that rely on time & socket functions are compiled correctly.)
-    if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
-    endif()
-endif()
-
 # project includes
 include_directories(include)
 
