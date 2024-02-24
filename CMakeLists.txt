@@ -65,8 +65,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-# add engine
-add_subdirectory(engine)
 
 # add game
 add_subdirectory(game)
@@ -74,9 +72,10 @@ add_subdirectory(game)
 # Add source to this project's executable.
 add_executable (${PROJECT_NAME} "src/main.cpp" "src/app.cpp")
 
-# link engine
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/engine/include)
-target_link_libraries(${PROJECT_NAME} PUBLIC engine)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/game/modules/reload)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/game/modules/render/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC render)
 
 # link game
 if (NOT BUILD_SHARED_LIBS)

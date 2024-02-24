@@ -1,5 +1,4 @@
 #include "mixer.hpp"
-#include "defs.hpp"
 
 Mixer::Mixer() {
   // frequency of 44100 (CD quality), the default format, 2 channels (stereo)

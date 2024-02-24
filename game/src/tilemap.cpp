@@ -1,7 +1,6 @@
 #include "tilemap.hpp"
 #include "SDL2/SDL_log.h"
 #include "asset-manager.hpp"
-#include "defs.hpp"
 #include "glad/glad.h"
 
 Tilemap::Tilemap(const char *path) {
@@ -109,8 +108,8 @@ void Tilemap::DrawColliders(SpriteBatch *spriteBatch) {
   }
 }
 
-void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found,
-                              flecs::entity entity, bool &isGrounded) {
+void Tilemap::IsCollidingWith(SDL_Rect *other, SDL_Rect &found, uint64_t entity,
+                              bool &isGrounded) {
 
   entitiesCollidingWithMap.erase(entity);
 
@@ -227,7 +226,7 @@ SDL_Rect Tilemap::GetBounds() {
           static_cast<int>(map.getTileSize().y * map.getTileCount().y)};
 }
 
-bool Tilemap::HasCollision(flecs::entity entity) {
+bool Tilemap::HasCollision(uint64_t entity) {
   return entitiesCollidingWithMap.find(entity) !=
          entitiesCollidingWithMap.end();
 }

@@ -6,6 +6,12 @@
 #include <string>
 #include <vector>
 
+#ifndef GAME_NAME
+#define GAME_NAME "Add Game Name to CMakeLists.txt"
+#endif
+
+#define ASPECT_RATIO ((float)WINDOW_WIDTH / (float)WINDOW_HEIGHT)
+
 class Window;
 
 class Renderer {

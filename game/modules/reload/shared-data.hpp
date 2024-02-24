@@ -1,5 +1,6 @@
 #pragma once
-#include "defs.hpp"
+
+#define TEXT_BUFFER_SIZE 256
 
 struct SharedData {
   char text_input_buffer[TEXT_BUFFER_SIZE];
