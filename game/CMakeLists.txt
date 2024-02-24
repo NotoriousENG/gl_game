@@ -83,6 +83,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC flecs::flecs_static)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/modules/reload)
 
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/modules/asset)
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${TMX_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC tmxlite)
 
